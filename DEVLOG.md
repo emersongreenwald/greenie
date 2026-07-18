@@ -1,0 +1,64 @@
+# Greenie — Development Log
+
+Entries are in reverse chronological order. Each entry corresponds to a working session.
+
+---
+
+## 2026-07-18 (continued)
+
+**What we did**
+Got the app running on an iPhone via Expo Go after an extended debugging session. Resolved SDK version mismatch by targeting Expo SDK 54 to match the installed Expo Go version. Confirmed the app loads and renders correctly on device.
+
+**Decisions made**
+- Targeting Expo SDK 54 (not 57 as originally scaffolded) to match the version of Expo Go available on the development device.
+- NativeWind stripped out temporarily during debugging to isolate issues — will be re-added cleanly.
+- Using StyleSheet API for now; className-based styling to follow.
+
+**Challenges**
+- Expo SDK 57 was too new for Expo Go; SDK 52 was too old. SDK 54 matched exactly.
+- The QR code generated early in the session pointed to a stale IP (192.168.18.182). The actual IP was 10.105.1.113, which caused all connection attempts to silently fail.
+- react-native-reanimated v4 pulled in react-native-worklets as a dependency that was not installable cleanly — removed entirely since we don't need animations yet.
+- The `create-expo-app` blank template required manual entry point wiring (index.ts → expo-router/entry) which was not obvious from the docs.
+
+**Next steps**
+Re-add NativeWind for SDK 54, verify className styling works, then commit and begin Milestone 2: Authentication.
+
+---
+
+## 2026-07-18
+
+**What we did**
+Completed Milestone 1: project setup. Scaffolded the Expo app with TypeScript, configured Expo Router for file-based navigation, installed and configured NativeWind for Tailwind CSS styling, installed the Supabase JS client, and established the folder structure (app, components, lib, services, stores, types). Updated CLAUDE.md with code conventions, updated README with project structure.
+
+**Decisions made**
+- Used `--legacy-peer-deps` to resolve a NativeWind/Tailwind peer dependency conflict caused by Expo SDK 57 being very new. Not a breaking issue — just an npm resolution flag.
+- `.env` added to `.gitignore` manually since the Expo template only covered `.env*.local`.
+- Screens call service functions rather than Supabase directly — keeps screens clean and data layer swappable.
+
+**Challenges**
+- `create-expo-app` refused to scaffold into a non-empty directory. Solved by scaffolding in a temp directory and copying the generated files over.
+- NativeWind installation failed on first attempt due to a peer dependency conflict with React 19. Resolved with `--legacy-peer-deps`.
+
+**Next steps**
+User creates a Supabase project and adds credentials to `.env`. Then run the app with `npx expo start` and scan QR code with Expo Go to verify the full stack is working.
+
+---
+
+## 2026-07-12
+
+**What we did**
+Defined the project from scratch. Established the tech stack, scoped the MVP, and created the full documentation foundation: CLAUDE.md, REQUIREMENTS.md, ROADMAP.md, DEVLOG.md, and README.md (in progress).
+
+**Decisions made**
+- Chose React Native + Expo for cross-platform mobile development.
+- Chose Supabase as the backend for its PostgreSQL database, built-in authentication, and real-time capabilities.
+- Chose Expo Router, NativeWind, and Zustand to complete the stack.
+- Defined MVP scope: student and org accounts, swipe-based discovery, hour logging, org verification, XP and level progression, student dashboard.
+- Treated XP and leveling as core identity features, not optional enhancements.
+- Deferred streaks, badges, leaderboards, notifications, and social features to Phase 2+.
+
+**Challenges**
+None technical yet. Main challenge was resisting the urge to over-scope the MVP — keeping the feature list focused and honest.
+
+**Next steps**
+Write README.md, then begin Milestone 1: project setup (Expo app, Supabase connection, folder structure, GitHub push).
