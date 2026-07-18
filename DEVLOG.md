@@ -4,6 +4,24 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-18 (continued x2)
+
+**What we did**
+Got NativeWind working. `className` styling now renders correctly on device — "Greenie" appears in green via `text-green-600`, white background via `bg-white`. Milestone 1 is fully complete.
+
+**Decisions made**
+- Removed `nativewind/babel` from babel config entirely; using `jsxImportSource: 'nativewind'` inside `babel-preset-expo` instead. This avoids the `react-native-worklets/plugin` error.
+- Installed `react-native-reanimated@4.1.7` (Expo SDK 54 compatible). NativeWind's runtime (`react-native-css-interop`) requires it at bundle time for CSS animation support, even though we're not using animations.
+
+**Challenges**
+- `react-native-css-interop` has a hard runtime `require('react-native-reanimated')` inside its animation handler. Metro resolves all requires at bundle time, so the module must be installed even if animations are never used.
+- The two separate errors (Babel plugin for worklets vs. Metro runtime resolution) had the same root cause but manifested differently, which made them look like unrelated problems.
+
+**Next steps**
+Begin Milestone 2: Authentication — student and organization account creation, sign-in/sign-out, session persistence, and routing by account type.
+
+---
+
 ## 2026-07-18 (continued)
 
 **What we did**
