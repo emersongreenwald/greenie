@@ -1,9 +1,25 @@
-import { Text, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { Redirect } from 'expo-router';
+import { useAuthStore } from '../stores/useAuthStore';
 
-export default function HomeScreen() {
-  return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-2xl font-bold text-green-600">Greenie</Text>
-    </View>
-  );
+export default function Index() {
+  const { session, profile, initialized } = useAuthStore();
+
+  if (!initialized) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator color="#16a34a" />
+      </View>
+    );
+  }
+
+  if (!session) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  if (profile?.account_type === 'student') {
+    return <Redirect href="/(student)/dashboard" />;
+  }
+
+  return <Redirect href="/(org)/dashboard" />;
 }

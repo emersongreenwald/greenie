@@ -4,6 +4,27 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-22
+
+**What we did**
+Completed Milestone 2: Authentication. Students and organizations can now create accounts, sign in, and be routed to their respective dashboards. Session persists across app restarts via AsyncStorage.
+
+**Decisions made**
+- Used a `profiles` table to store `account_type` and `full_name` separate from Supabase Auth, which only stores credentials. This is standard practice — Auth handles identity, the database handles profile data.
+- Disabled Supabase email confirmation for MVP. Adds friction without value during development; can be re-enabled before launch.
+- Used Expo Router route groups (`(auth)`, `(student)`, `(org)`) to separate screen layouts without affecting URL paths.
+- Routing logic lives entirely in `app/index.tsx` — one place determines where a user lands after the app loads.
+
+**Challenges**
+- The new Supabase `sb_publishable_` key format works for auth but the `profiles` table was missing `GRANT` permissions for the `authenticated` role. RLS policies only filter rows — they don't grant table access. Both are required.
+- `react-native-reanimated` v4 requires `react-native-worklets` as a separate package. `babel-preset-expo` auto-detects both and applies their Babel plugins. Installing worklets@0.8.3 resolved the bundler chain.
+- Supabase error objects are not `instanceof Error`, so the original catch blocks were hiding the real error message behind a generic "sign up failed" string.
+
+**Next steps**
+Begin Milestone 3: Opportunity discovery — database schema for opportunities, swipe-based card UI, opportunity detail view, and sign-up flow.
+
+---
+
 ## 2026-07-18 (continued x2)
 
 **What we did**
