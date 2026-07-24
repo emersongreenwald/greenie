@@ -5,6 +5,7 @@ import { SwipeCard } from '../../components/SwipeCard';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { getOpportunities, signUpForOpportunity } from '../../services/opportunities';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { colors } from '../../constants/theme';
 import type { Opportunity } from '../../types/opportunity';
 
 export default function Discover() {
@@ -13,7 +14,6 @@ export default function Discover() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [signedUp, setSignedUp] = useState(false);
 
   useEffect(() => {
     getOpportunities()
@@ -23,7 +23,6 @@ export default function Discover() {
   }, []);
 
   function handleSwipeLeft() {
-    setSignedUp(false);
     setCurrentIndex((i) => i + 1);
   }
 
@@ -32,9 +31,8 @@ export default function Discover() {
     if (!profile) return;
     try {
       await signUpForOpportunity(opportunity.id, profile.id);
-      setSignedUp(true);
-    } catch (e) {
-      // Already signed up or other error — still advance
+    } catch {
+      // Already signed up — still advance
     }
     setCurrentIndex((i) => i + 1);
   }
@@ -46,7 +44,7 @@ export default function Discover() {
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator color="#16a34a" />
+        <ActivityIndicator color={colors.brand.default} />
       </View>
     );
   }
@@ -70,7 +68,6 @@ export default function Discover() {
       </View>
 
       <View className="flex-1 items-center justify-center">
-        {/* Render next card behind current for depth effect */}
         {opportunities[currentIndex + 1] && (
           <View className="absolute opacity-60 scale-95">
             <OpportunityCard opportunity={opportunities[currentIndex + 1]} />

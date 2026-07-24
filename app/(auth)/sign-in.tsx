@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { signIn, getProfile } from '../../services/auth';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 export default function SignIn() {
   const router = useRouter();
@@ -44,11 +43,10 @@ export default function SignIn() {
         contentContainerClassName="flex-1 justify-center px-6"
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-3xl font-bold text-green-600 mb-2">Greenie</Text>
+        <Text className="text-3xl font-bold text-brand mb-2">Greenie</Text>
         <Text className="text-gray-500 mb-8">Sign in to continue</Text>
 
-        <TextInput
-          className="border border-gray-300 rounded-lg px-4 py-3 text-base mb-4"
+        <Input
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
@@ -56,8 +54,7 @@ export default function SignIn() {
           autoCorrect={false}
           keyboardType="email-address"
         />
-        <TextInput
-          className="border border-gray-300 rounded-lg px-4 py-3 text-base mb-4"
+        <Input
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
@@ -66,24 +63,21 @@ export default function SignIn() {
 
         {error ? <Text className="text-red-500 text-sm mb-4">{error}</Text> : null}
 
-        <TouchableOpacity
-          className="bg-green-600 rounded-lg py-4 items-center mb-6"
+        <Button
+          label="Sign in"
+          loadingLabel="Signing in…"
           onPress={handleSignIn}
-          disabled={loading}
-        >
-          <Text className="text-white font-semibold text-base">
-            {loading ? 'Signing in…' : 'Sign in'}
-          </Text>
-        </TouchableOpacity>
+          loading={loading}
+        />
 
-        <View className="flex-row justify-center gap-1">
+        <View className="flex-row justify-center gap-1 mt-6">
           <Text className="text-gray-500">New here?</Text>
           <Link href="/(auth)/sign-up-student">
-            <Text className="text-green-600 font-medium">Student sign up</Text>
+            <Text className="text-brand font-medium">Student sign up</Text>
           </Link>
           <Text className="text-gray-500">or</Text>
           <Link href="/(auth)/sign-up-org">
-            <Text className="text-green-600 font-medium">Organization sign up</Text>
+            <Text className="text-brand font-medium">Organization sign up</Text>
           </Link>
         </View>
       </ScrollView>

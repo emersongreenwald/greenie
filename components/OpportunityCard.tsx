@@ -15,7 +15,7 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
   return (
     <View className="bg-white rounded-2xl shadow-md p-6 w-80">
       <Text className="text-xl font-bold text-gray-900 mb-1">{opportunity.title}</Text>
-      <Text className="text-green-600 font-medium mb-4">
+      <Text className="text-brand font-medium mb-4">
         {opportunity.profiles?.full_name ?? 'Organization'}
       </Text>
       <Text className="text-gray-600 mb-6 leading-6" numberOfLines={4}>
@@ -24,7 +24,7 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
       <View className="border-t border-gray-100 pt-4 gap-2">
         <Text className="text-gray-500 text-sm">{date}</Text>
         <Text className="text-gray-500 text-sm">{opportunity.location}</Text>
-        <Text className="text-green-700 font-semibold">
+        <Text className="text-brand-dark font-semibold">
           {opportunity.hours_value} {opportunity.hours_value === 1 ? 'hour' : 'hours'}
         </Text>
       </View>

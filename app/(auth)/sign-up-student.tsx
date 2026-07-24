@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, Text, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { signUp, getProfile } from '../../services/auth';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 
 export default function SignUpStudent() {
   const router = useRouter();
@@ -41,18 +40,16 @@ export default function SignUpStudent() {
         contentContainerClassName="flex-1 justify-center px-6"
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-3xl font-bold text-green-600 mb-2">Student sign up</Text>
+        <Text className="text-3xl font-bold text-brand mb-2">Student sign up</Text>
         <Text className="text-gray-500 mb-8">Create your Greenie account</Text>
 
-        <TextInput
-          className="border border-gray-300 rounded-lg px-4 py-3 text-base mb-4"
+        <Input
           placeholder="Full name"
           value={fullName}
           onChangeText={setFullName}
           autoCorrect={false}
         />
-        <TextInput
-          className="border border-gray-300 rounded-lg px-4 py-3 text-base mb-4"
+        <Input
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
@@ -60,8 +57,7 @@ export default function SignUpStudent() {
           autoCorrect={false}
           keyboardType="email-address"
         />
-        <TextInput
-          className="border border-gray-300 rounded-lg px-4 py-3 text-base mb-4"
+        <Input
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
@@ -70,20 +66,17 @@ export default function SignUpStudent() {
 
         {error ? <Text className="text-red-500 text-sm mb-4">{error}</Text> : null}
 
-        <TouchableOpacity
-          className="bg-green-600 rounded-lg py-4 items-center mb-6"
+        <Button
+          label="Create account"
+          loadingLabel="Creating account…"
           onPress={handleSignUp}
-          disabled={loading}
-        >
-          <Text className="text-white font-semibold text-base">
-            {loading ? 'Creating account…' : 'Create account'}
-          </Text>
-        </TouchableOpacity>
+          loading={loading}
+        />
 
-        <View className="flex-row justify-center gap-1">
+        <View className="flex-row justify-center gap-1 mt-6">
           <Text className="text-gray-500">Already have an account?</Text>
           <Link href="/(auth)/sign-in">
-            <Text className="text-green-600 font-medium">Sign in</Text>
+            <Text className="text-brand font-medium">Sign in</Text>
           </Link>
         </View>
       </ScrollView>

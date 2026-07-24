@@ -6,7 +6,18 @@ module.exports = {
   ],
   presets: [require('nativewind/preset')],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        // Mirror of colors.brand in constants/theme.ts.
+        // Update both files together when changing the brand color.
+        brand: {
+          DEFAULT: '#16a34a',
+          muted:   '#f0fdf4',
+          dark:    '#15803d',
+          border:  '#bbf7d0',
+        },
+      },
+    },
   },
   plugins: [],
 };

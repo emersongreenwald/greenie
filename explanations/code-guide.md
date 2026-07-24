@@ -4,6 +4,124 @@ Plain-English explanations of every important file in the project. Updated after
 
 ---
 
+## File: `constants/theme.ts`
+
+### Purpose
+The single source of truth for every design decision in the app — colors, spacing, border radius, and typography.
+
+### In Plain English
+Every pixel decision in a well-built app should trace back to one place. Right now Greenie is green — but what if you wanted to change it to blue? Without a theme file, you'd have to find every `#16a34a` in every file. With this file, you change one value and everything that imports from it updates automatically. The `tailwind.config.js` brand aliases mirror the colors here for Tailwind class names; everything else (like `ActivityIndicator`) uses the values directly.
+
+### How It Works
+Four exported objects: `colors`, `spacing`, `borderRadius`, and `typography`. Each groups related values under meaningful names. Components import what they need.
+
+### Key Code
+```ts
+export const colors = {
+  brand: {
+    default: '#16a34a', // bg-brand, text-brand in Tailwind
+    muted:   '#f0fdf4', // bg-brand-muted
+    dark:    '#15803d', // text-brand-dark
+  },
+  neutral: { ... },
+  error: '#ef4444',
+};
+```
+The `brand` object holds all variants of the primary color. When restyling, these four values plus the matching entries in `tailwind.config.js` are all that needs to change.
+
+### What I Should Remember
+- This file + `tailwind.config.js` are the only two files to edit for a full visual restyle.
+- Tailwind `className` values (like `text-brand`) come from `tailwind.config.js`.
+- JavaScript values that can't be expressed as class names (like `ActivityIndicator color`) come from this file.
+- `spacing`, `borderRadius`, and `typography` give consistent names to numbers so you're never guessing "should this be 16 or 24?"
+
+---
+
+## File: `components/ui/Button.tsx`
+
+### Purpose
+A reusable button component so every button in the app looks and behaves consistently.
+
+### In Plain English
+Before this component existed, every screen had its own `TouchableOpacity` + `Text` combination with hardcoded colors and padding. If you wanted to change the button style, you'd edit every screen. Now every button imports `Button` from here. Change this one file and every button in the app updates. It supports two variants: `primary` (green, for main actions) and `danger` (red text, for destructive actions like sign out).
+
+### Key Code
+```tsx
+<Button
+  label="Sign in"
+  loadingLabel="Signing in…"
+  onPress={handleSignIn}
+  loading={loading}
+/>
+```
+- `label` — the text shown normally.
+- `loadingLabel` — the text shown while the async action is in progress.
+- `loading` — disables the button and shows `loadingLabel` while true.
+- `variant="danger"` — renders as plain red text instead of a filled button.
+
+### What I Should Remember
+- All buttons in the app use this component — changing it changes everything.
+- `disabled || loading` prevents double-submits.
+- `variant="danger"` is for destructive or secondary actions.
+- The button's visual style (color, radius, padding) is defined entirely here — screens never set button styling.
+
+---
+
+## File: `components/ui/Input.tsx`
+
+### Purpose
+A reusable text input so every form field in the app has consistent borders, padding, and text size.
+
+### In Plain English
+Same idea as `Button` — one component, used everywhere, easy to restyle. It wraps React Native's `TextInput` with the project's standard border, rounding, and padding baked in. Screens just pass `placeholder`, `value`, and `onChangeText`.
+
+### Key Code
+```tsx
+<Input
+  placeholder="Email"
+  value={email}
+  onChangeText={setEmail}
+  autoCapitalize="none"
+  keyboardType="email-address"
+/>
+```
+The `...props` spread at the end passes through any extra TextInput props (like `secureTextEntry`, `keyboardType`) without the component needing to declare them all explicitly.
+
+### What I Should Remember
+- All form fields use this component — border, radius, and padding are defined here once.
+- `placeholderTextColor` is set here globally so it doesn't need to be repeated on every input.
+- The `extends Pick<TextInputProps, ...>` in the interface means TypeScript knows which TextInput props are valid here.
+
+---
+
+## File: `tailwind.config.js`
+
+### Purpose
+Tells Tailwind CSS which files to scan and defines custom design tokens like `brand` colors.
+
+### In Plain English
+Tailwind ships with colors like `green-600`. We've added our own alias called `brand` so components write `text-brand` instead of `text-green-600`. This is the Tailwind half of the theming system — `className` values like `bg-brand` resolve here. The actual hex values must match `constants/theme.ts`.
+
+### Key Code
+```js
+colors: {
+  brand: {
+    DEFAULT: '#16a34a', // text-brand, bg-brand
+    muted:   '#f0fdf4', // bg-brand-muted
+    dark:    '#15803d', // text-brand-dark
+    border:  '#bbf7d0', // border-brand
+  },
+},
+```
+`DEFAULT` is a Tailwind convention — it's the value used when you write `text-brand` (no suffix). Suffixes like `-muted` and `-dark` give you `text-brand-muted`, `bg-brand-dark`, etc.
+
+### What I Should Remember
+- `tailwind.config.js` + `constants/theme.ts` are the two files to update when restyling.
+- The `brand` hex values here must match the `colors.brand` values in `theme.ts`.
+- `content` tells Tailwind which files to scan — if you add a new folder with components, add it here.
+
+---
+
 ## File: `types/opportunity.ts`
 
 ### Purpose
