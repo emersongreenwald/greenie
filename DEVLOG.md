@@ -4,6 +4,26 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-23
+
+**What we did**
+Completed Milestone 3: Opportunity discovery. Students can swipe through a stack of volunteer opportunities, tap a card to see full details, and sign up. Seeded the database with four Hamptons-area test opportunities.
+
+**Decisions made**
+- Built the swipe gesture from scratch using React Native's `PanResponder` + `Animated.Value` rather than a third-party library. More code, but no new dependencies and full control over behavior.
+- Separated the gesture logic (`SwipeCard`) from the visual content (`OpportunityCard`). `SwipeCard` is generic — it can wrap anything. `OpportunityCard` only handles appearance.
+- Swipe right = sign up immediately; tap = detail view with explicit sign-up button. Both paths create the same `opportunity_signups` row.
+- Used `key={currentIndex}` on `SwipeCard` so React recreates the component (and resets gesture state) each time the index advances.
+- Seeded test opportunities via SQL subquery selecting by `account_type = 'org'` so no hardcoded user IDs were needed.
+
+**Challenges**
+- None significant — the architecture from Milestones 1 and 2 made this straightforward to build on.
+
+**Next steps**
+Milestone 4: Hour logging and verification — students log hours after completing an opportunity, organizations verify them, XP is awarded upon verification.
+
+---
+
 ## 2026-07-22
 
 **What we did**

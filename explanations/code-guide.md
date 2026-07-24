@@ -4,6 +4,215 @@ Plain-English explanations of every important file in the project. Updated after
 
 ---
 
+## File: `types/opportunity.ts`
+
+### Purpose
+Defines the shape of opportunity and signup data so TypeScript can catch mistakes across the app.
+
+### In Plain English
+Same idea as `types/auth.ts` — these are contracts that describe what data looks like. `Opportunity` mirrors the columns in the `opportunities` database table. The `profiles?` field (with the `?` meaning optional) is a joined object — when we fetch an opportunity, we also ask Supabase to include the organization's name from the `profiles` table.
+
+### Key Code
+```ts
+profiles?: { full_name: string };
+```
+The `?` means this field might not be present. When we query `opportunities` with `.select('*, profiles(full_name)')`, Supabase joins the related profile row and nests it here. If the join fails or isn't requested, this field is simply absent.
+
+### What I Should Remember
+- Types mirror database table columns exactly.
+- The `profiles?` nested field comes from a Supabase join, not a separate query.
+- `?` on a field means it's optional — TypeScript won't complain if it's missing.
+
+---
+
+## File: `services/opportunities.ts`
+
+### Purpose
+All database operations related to opportunities — fetching them, fetching a single one, signing up, and checking what a student has already signed up for.
+
+### In Plain English
+Same pattern as `services/auth.ts`. Screens never touch Supabase directly — they call these functions. Four functions: get all opportunities (for the swipe stack), get one opportunity (for the detail screen), sign up for an opportunity, and get a student's list of signups (so the detail screen knows whether to show "You're signed up" or a button).
+
+### Key Code
+```ts
+const { data, error } = await supabase
+  .from('opportunities')
+  .select('*, profiles(full_name)')
+  .order('date', { ascending: true });
+```
+`select('*, profiles(full_name)')` means: give me all columns from `opportunities`, AND for each row, look up the related row in `profiles` using the `org_id` foreign key and include just the `full_name`. This is a join in one line — no separate query needed.
+
+```ts
+export async function getStudentSignups(studentId: string): Promise<string[]> {
+  const { data } = await supabase
+    .from('opportunity_signups')
+    .select('opportunity_id')
+    .eq('student_id', studentId);
+  return data.map((row) => row.opportunity_id);
+}
+```
+Returns a plain array of opportunity IDs the student has signed up for. The detail screen checks `signups.includes(id)` to decide what to show.
+
+### What I Should Remember
+- `.select('*, profiles(full_name)')` fetches a related row from another table in one query.
+- Services throw errors; screens catch them.
+- `getStudentSignups` returns an array of IDs so the detail screen can check membership with `.includes()`.
+
+---
+
+## File: `components/SwipeCard.tsx`
+
+### Purpose
+A reusable wrapper that makes any content swipeable — tracking the finger, animating the card, and calling a callback when the swipe is complete.
+
+### In Plain English
+Think of this as a picture frame that you can grab and fling. The frame doesn't care what's inside it — it just handles the physics. When you press down, it starts tracking your finger. As you drag, the card moves and rotates to follow. When you let go, it either snaps back (if you didn't drag far enough) or flies off screen in the direction you were dragging. After it flies off, it calls `onSwipeLeft` or `onSwipeRight` so the parent can advance to the next card.
+
+### How It Works
+1. `PanResponder` is React Native's built-in gesture system. It fires events when a finger presses down, moves, and lifts.
+2. `Animated.ValueXY` stores the card's current x and y position as animated values. Connecting them to the card's `transform` style makes it move in real time.
+3. On release, the `dx` value (how far horizontally the finger moved) is checked against a threshold (25% of screen width). Past the threshold = swipe; under it = snap back.
+4. `rotate` is derived from `position.x` using `interpolate` — as the card moves right, it tilts clockwise; left tilts it counterclockwise.
+
+### Key Code
+```ts
+const position = useRef(new Animated.ValueXY()).current;
+```
+`Animated.ValueXY` holds an `{x, y}` pair that can be animated. `useRef` keeps the same object across re-renders without causing re-renders when it changes.
+
+```ts
+onPanResponderMove: (_, gesture) => {
+  position.setValue({ x: gesture.dx, y: gesture.dy });
+},
+```
+Every time the finger moves, `gesture.dx` and `gesture.dy` tell us how far it's moved from where it started. We set the card's position to match instantly.
+
+```ts
+const rotate = position.x.interpolate({
+  inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+  outputRange: ['-15deg', '0deg', '15deg'],
+});
+```
+`interpolate` maps one range of values to another. When `position.x` is 0 (center), rotation is 0°. When it reaches the screen edge, rotation is ±15°. Values between are calculated automatically.
+
+```ts
+Animated.timing(position, {
+  toValue: { x: SCREEN_WIDTH * 1.5, y: 0 },
+  duration: 250,
+  useNativeDriver: true,
+}).start(() => {
+  position.setValue({ x: 0, y: 0 });
+  onSwipeRight();
+});
+```
+`Animated.timing` moves a value to a target over a set duration. `useNativeDriver: true` runs the animation on the native thread (smooth, no JavaScript lag). The `.start()` callback fires when the animation finishes — here we reset position and notify the parent.
+
+### What I Should Remember
+- `PanResponder` handles touch tracking; `Animated.ValueXY` handles the visual movement.
+- `interpolate` lets you derive one animated value from another (rotation from position).
+- `useNativeDriver: true` is always preferred — it runs animations on the GPU, not in JavaScript.
+- This component is generic — it has no knowledge of opportunities. It just moves and calls callbacks.
+- `key={currentIndex}` in the parent is critical — it forces React to recreate this component for each new card, resetting all gesture state.
+
+---
+
+## File: `components/OpportunityCard.tsx`
+
+### Purpose
+The visual content of each swipe card — title, organization name, description, date, location, and hours.
+
+### In Plain English
+This component just displays information. It has no logic, no state, no gestures — it receives an `opportunity` object and renders it. It lives inside a `SwipeCard` wrapper which provides all the gesture behavior. Separating them means you can redesign the card's appearance without touching the swipe logic, and vice versa.
+
+### Key Code
+```ts
+const date = new Date(opportunity.date).toLocaleDateString('en-US', {
+  weekday: 'long', month: 'long', day: 'numeric',
+});
+```
+Converts a raw date string from the database (like `"2026-08-02"`) into a readable format like `"Saturday, August 2"`.
+
+### What I Should Remember
+- This component is purely presentational — no state, no effects, no logic.
+- It receives an `Opportunity` object as a prop and renders its fields.
+- The swipe behavior comes from `SwipeCard`, not this component.
+
+---
+
+## File: `app/(student)/discover.tsx`
+
+### Purpose
+The main student screen — loads a stack of opportunities and lets the student swipe through them.
+
+### In Plain English
+This screen does the work of connecting data to UI. It fetches all opportunities from the database when it first loads, then renders them as a stack of swipe cards. The current card is on top; the next card is visible behind it at a smaller size to hint there's more to come. Swiping right signs the student up and advances to the next card; swiping left just advances; tapping opens the detail screen.
+
+### How It Works
+1. `useEffect` fetches all opportunities once when the screen loads.
+2. `currentIndex` tracks which card is on top. Swiping advances the index.
+3. `SwipeCard` wraps `OpportunityCard` for each card. `key={currentIndex}` resets the swipe component for each new card.
+4. When `currentIndex >= opportunities.length`, there are no more cards — show a "you're all caught up" message.
+
+### Key Code
+```tsx
+{opportunities[currentIndex + 1] && (
+  <View className="absolute opacity-60 scale-95">
+    <OpportunityCard opportunity={opportunities[currentIndex + 1]} />
+  </View>
+)}
+```
+Renders the *next* card behind the current one, slightly smaller and faded. `absolute` positioning stacks it directly behind. This creates the visual effect of a deck of cards.
+
+```tsx
+<SwipeCard
+  key={currentIndex}
+  onSwipeLeft={handleSwipeLeft}
+  onSwipeRight={handleSwipeRight}
+  onTap={handleTap}
+>
+  <OpportunityCard opportunity={opportunities[currentIndex]} />
+</SwipeCard>
+```
+`key={currentIndex}` is the critical detail — React uses `key` to identify components. When `key` changes, React destroys the old component and creates a new one. This resets `SwipeCard`'s internal gesture state for each new card.
+
+### What I Should Remember
+- `useEffect` with `[]` fetches data once on mount.
+- `currentIndex` is the only state that drives the whole screen — advancing it changes the card shown.
+- `key={currentIndex}` is required to reset the swipe component for each card.
+- The "next card behind" effect is just an absolutely positioned component with reduced opacity and scale.
+
+---
+
+## File: `app/(student)/opportunity/[id].tsx`
+
+### Purpose
+The detail screen for a single opportunity — full description, date, location, hours, and a sign-up button.
+
+### In Plain English
+This screen is reached by tapping a card on the discover screen. The `[id]` in the filename is a dynamic segment — Expo Router replaces it with the actual opportunity ID when navigating. The screen loads that specific opportunity and also checks whether the student has already signed up. If they have, it shows a "You're signed up" confirmation instead of a button.
+
+### Key Code
+```ts
+const { id } = useLocalSearchParams<{ id: string }>();
+```
+`useLocalSearchParams` reads the dynamic segment from the URL. If the route is `/opportunity/abc-123`, then `id` will be `"abc-123"`.
+
+```ts
+const [opp, signups] = await Promise.all([
+  getOpportunity(id),
+  getStudentSignups(profile.id),
+]);
+```
+`Promise.all` runs two async operations at the same time and waits for both to finish. This is faster than running them one after the other.
+
+### What I Should Remember
+- `[id]` in a filename creates a dynamic route — Expo Router passes the value via `useLocalSearchParams`.
+- `Promise.all` runs multiple async calls in parallel — always prefer this over sequential `await` when the calls don't depend on each other.
+- The screen checks existing signups on load so the button state is accurate before the user interacts.
+- `router.back()` navigates to the previous screen, just like a back button.
+
+---
+
 ## File: `index.ts`
 
 ### Purpose

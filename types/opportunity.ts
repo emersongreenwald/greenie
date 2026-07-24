@@ -1,0 +1,18 @@
+export interface Opportunity {
+  id: string;
+  org_id: string;
+  title: string;
+  description: string;
+  location: string;
+  date: string;
+  hours_value: number;
+  created_at: string;
+  profiles?: { full_name: string };
+}
+
+export interface OpportunitySignup {
+  id: string;
+  opportunity_id: string;
+  student_id: string;
+  signed_up_at: string;
+}

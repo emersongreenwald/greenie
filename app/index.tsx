@@ -18,7 +18,7 @@ export default function Index() {
   }
 
   if (profile?.account_type === 'student') {
-    return <Redirect href="/(student)/dashboard" />;
+    return <Redirect href="/(student)/discover" />;
   }
 
   return <Redirect href="/(org)/dashboard" />;

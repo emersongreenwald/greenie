@@ -24,7 +24,7 @@ export default function SignUpStudent() {
       const user = await signUp(email.trim(), password, fullName.trim(), 'student');
       const profile = await getProfile(user.id);
       setProfile(profile);
-      router.replace('/(student)/dashboard');
+      router.replace('/(student)/discover');
     } catch (e) {
       setError((e as any)?.message || String(e));
     } finally {

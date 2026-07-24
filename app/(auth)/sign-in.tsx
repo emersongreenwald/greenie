@@ -24,7 +24,7 @@ export default function SignIn() {
       const profile = await getProfile(user.id);
       setProfile(profile);
       if (profile.account_type === 'student') {
-        router.replace('/(student)/dashboard');
+        router.replace('/(student)/discover');
       } else {
         router.replace('/(org)/dashboard');
       }
