@@ -11,6 +11,7 @@ export default function SignUpOrg() {
   const { setProfile } = useAuthStore();
 
   const [orgName, setOrgName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -20,7 +21,9 @@ export default function SignUpOrg() {
     setError('');
     setLoading(true);
     try {
-      const user = await signUp(email.trim(), password, orgName.trim(), 'org');
+      const user = await signUp(email.trim(), password, orgName.trim(), 'org', {
+        phone: phone.trim() || undefined,
+      });
       const profile = await getProfile(user.id);
       setProfile(profile);
       router.replace('/(org)/dashboard');
@@ -47,6 +50,13 @@ export default function SignUpOrg() {
           placeholder="Organization name"
           value={orgName}
           onChangeText={setOrgName}
+          autoCorrect={false}
+        />
+        <Input
+          placeholder="Phone number"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
           autoCorrect={false}
         />
         <Input

@@ -5,7 +5,8 @@ export async function signUp(
   email: string,
   password: string,
   fullName: string,
-  accountType: AccountType
+  accountType: AccountType,
+  extra?: { school_name?: string; graduation_year?: number; phone?: string }
 ) {
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
@@ -15,6 +16,7 @@ export async function signUp(
     id: data.user.id,
     account_type: accountType,
     full_name: fullName,
+    ...extra,
   });
   if (profileError) throw profileError;
 

@@ -11,6 +11,8 @@ export default function SignUpStudent() {
   const { setProfile } = useAuthStore();
 
   const [fullName, setFullName] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [graduationYear, setGraduationYear] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,9 +20,23 @@ export default function SignUpStudent() {
 
   async function handleSignUp() {
     setError('');
+
+    if (!schoolName.trim()) {
+      setError('Please enter your school name.');
+      return;
+    }
+    const year = parseInt(graduationYear, 10);
+    if (isNaN(year) || year < 2024 || year > 2032) {
+      setError('Please enter a valid graduation year (e.g. 2026).');
+      return;
+    }
+
     setLoading(true);
     try {
-      const user = await signUp(email.trim(), password, fullName.trim(), 'student');
+      const user = await signUp(email.trim(), password, fullName.trim(), 'student', {
+        school_name: schoolName.trim(),
+        graduation_year: year,
+      });
       const profile = await getProfile(user.id);
       setProfile(profile);
       router.replace('/(student)/discover');
@@ -47,6 +63,19 @@ export default function SignUpStudent() {
           placeholder="Full name"
           value={fullName}
           onChangeText={setFullName}
+          autoCorrect={false}
+        />
+        <Input
+          placeholder="School name (e.g. East Hampton High School)"
+          value={schoolName}
+          onChangeText={setSchoolName}
+          autoCorrect={false}
+        />
+        <Input
+          placeholder="Graduation year (e.g. 2026)"
+          value={graduationYear}
+          onChangeText={setGraduationYear}
+          keyboardType="number-pad"
           autoCorrect={false}
         />
         <Input

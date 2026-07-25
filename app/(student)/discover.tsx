@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SwipeCard } from '../../components/SwipeCard';
 import { OpportunityCard } from '../../components/OpportunityCard';
@@ -62,9 +62,14 @@ export default function Discover() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <View className="pt-16 pb-4 px-6">
-        <Text className="text-2xl font-bold text-gray-900">Discover</Text>
-        <Text className="text-gray-500">Swipe right to sign up · Tap to learn more</Text>
+      <View className="pt-16 pb-4 px-6 flex-row items-center justify-between">
+        <View>
+          <Text className="text-2xl font-bold text-gray-900">Discover</Text>
+          <Text className="text-gray-500">Swipe right to sign up · Tap to learn more</Text>
+        </View>
+        <TouchableOpacity onPress={() => router.push('/(student)/dashboard')}>
+          <Text className="text-brand font-medium">My Hours</Text>
+        </TouchableOpacity>
       </View>
 
       <View className="flex-1 items-center justify-center">

@@ -4,6 +4,30 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-24
+
+**What we did**
+Completed Milestone 4: Hour logging, org verification, and XP progression. Students can log hours after completing an opportunity; organizations review and verify or reject submissions; XP is automatically awarded upon verification. The student dashboard is now fully real: level badge, XP progress bar, and a per-opportunity list showing submission status. The org dashboard shows a pending count that links to the verification queue.
+
+Also made a set of architecture decisions for future school integration before writing any code: added `school_name` and `graduation_year` to student profiles, added `phone` to org profiles, and designed `hour_logs` to capture `actual_date` (when the service happened) separately from `submitted_at` (when the form was submitted) — critical for school service records.
+
+**Decisions made**
+- XP is calculated by a Postgres trigger, not by the client. The trigger fires when `hour_logs.status` changes to `'verified'` and updates `profiles.xp` and `profiles.level`. This can't be spoofed from the app.
+- XP formula: `round(hours_logged * 10)` XP per verified log. Level = `floor(xp / 100) + 1`. Each level is exactly 100 XP.
+- `school_name` is stored as plain text now. The plan is to replace it with a `school_id` FK in Phase 3 when school accounts are added — a simple migration. Not capturing it now would mean a painful user outreach campaign later.
+- `actual_date` is required on hour logs. Schools care about when the service happened, not when the student submitted the form.
+- One log per opportunity (`unique(opportunity_id, student_id)` constraint). Resubmission after rejection is deferred to a later milestone.
+- Optimistic updates on the org verification screen: cards disappear immediately on verify/reject without waiting for the network response. Makes the UI feel instant.
+- Date parsing: `actual_date + 'T12:00:00'` before calling `new Date()` to prevent timezone boundary bugs.
+
+**Challenges**
+- None significant — the architecture decisions took more thought than the code itself.
+
+**Next steps**
+All MVP features are now implemented. Next: UI milestone — redesign the visual layer using the theme system we built, then prep for a real test with Hamptons-area schools and organizations.
+
+---
+
 ## 2026-07-23
 
 **What we did**

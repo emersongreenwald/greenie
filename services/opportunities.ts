@@ -35,3 +35,13 @@ export async function getStudentSignups(studentId: string): Promise<string[]> {
   if (error) throw error;
   return data.map((row) => row.opportunity_id);
 }
+
+export async function getSignedUpOpportunities(studentId: string): Promise<Opportunity[]> {
+  const { data, error } = await supabase
+    .from('opportunity_signups')
+    .select('opportunities(*, profiles(full_name))')
+    .eq('student_id', studentId)
+    .order('signed_up_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => row.opportunities).filter(Boolean);
+}

@@ -4,6 +4,65 @@ Plain-English explanations of every important file in the project. Updated after
 
 ---
 
+## Architecture Decisions
+
+This section explains the major design choices that shape the whole codebase — not how a specific file works, but *why* things are structured the way they are. These decisions will affect every future feature, so they're worth understanding deeply.
+
+### Decision 1: `school_name` is a text field (not a foreign key) — for now
+
+In Milestone 4 we added `school_name` and `graduation_year` to the student profile as plain text columns. You might wonder: shouldn't `school_name` point to a `schools` table instead of just storing a string?
+
+The answer is: eventually yes, but not yet. We don't have school accounts. We don't have a `schools` table. And most importantly, we can't link to something that doesn't exist.
+
+The plan is:
+1. **Now (MVP):** `profiles.school_name = "East Hampton High School"` — a string the student types at sign-up.
+2. **Phase 3:** Create a `schools` table. Each row = one school. Run a migration that matches the string to the school row and replaces the string with a foreign key ID.
+3. **Phase 4:** `profiles.school_id` references `schools.id`, which references `districts.id`.
+
+Capturing the string now costs almost nothing. *Not* capturing it now means doing a painful outreach campaign to every existing user later to fill in their school. Always capture data at the earliest natural opportunity — you can restructure it later, but you can't recover data you never collected.
+
+### Decision 2: XP is calculated and awarded by the database (not the app)
+
+When an organization verifies a student's hours, a Postgres trigger fires and adds XP to the student's profile. The app never sends XP to the database — it only reads it.
+
+Why? Because anything the app sends can be intercepted. If the client calculated XP and sent it in an API call, a malicious user could send any number they wanted. By calculating XP inside a database trigger that only fires on a legitimate status change, there's no API call to intercept or manipulate.
+
+The formula (`round(hours_logged * 10)`) lives in the trigger, not in the TypeScript code. The TypeScript code that *displays* XP gain on the dashboard uses the same formula — but only for display purposes. The real XP in the database came from the trigger, not from JavaScript.
+
+This is the same reason banks calculate your balance on the server, not in your browser.
+
+### Decision 3: `actual_date` is separate from `submitted_at`
+
+The `hour_logs` table has two date fields:
+- `submitted_at` — when the student filled out the form in the app (set automatically by Postgres)
+- `actual_date` — when the community service actually happened (entered by the student)
+
+These are almost always different. A student might complete beach cleanup on Saturday but not open the app until Monday. Schools need the service date, not the submission date. If we only had `submitted_at`, every service record would say the work happened Monday.
+
+This also matters for school reporting: a counselor reviewing a transcript needs to see "cleaned the beach on June 15" — not "submitted a form on June 17."
+
+### Decision 4: `hour_logs` is the canonical unit of the platform
+
+Every other table in the app builds toward or queries the `hour_logs` table:
+
+```
+profiles (students) ──→ hour_logs ←── opportunities ←── profiles (orgs)
+```
+
+Phase 2 (service records) generates a PDF by reading verified `hour_logs` for a student.
+Phase 3 (school dashboards) lets counselors query `hour_logs` filtered by `school_name` to see total hours for all students.
+Phase 4 (district adoption) aggregates `hour_logs` across all schools in a district.
+
+None of those phases require changes to the `hour_logs` schema — just new ways of querying the data that's already there. This is good database design: design tables around facts (a student did X hours on Y date for Z organization), not around features (what the current UI needs to show).
+
+### Decision 5: No school accounts in MVP — but the data is ready for them
+
+School integration (Phase 3) requires counselors to log in, see their students, and track graduation requirements. That's a significant feature. We're not building it yet for two reasons: (1) it's as complex as everything we've built so far, and (2) it requires a go-to-market step — a school IT admin has to actually adopt the platform.
+
+What we *are* doing is capturing everything Phase 3 will need: `school_name`, `graduation_year`, and a verified `hour_logs` row with `actual_date` and `service_description`. When the time comes, Phase 3 is an additive feature — it doesn't require rewriting existing data.
+
+---
+
 ## File: `constants/theme.ts`
 
 ### Purpose
@@ -760,29 +819,200 @@ Same structure as sign-in, but with an extra field for full name and calls `sign
 
 ---
 
-## File: `app/(student)/dashboard.tsx` and `app/(org)/dashboard.tsx`
+## File: `app/(student)/dashboard.tsx`
 
 ### Purpose
-Placeholder screens for the student and organization dashboards, created so routing has somewhere to land while real content is built in later milestones.
+The student's home base — shows their current level, XP progress, total verified hours, and a list of every opportunity they've signed up for with the status of their hour log for each.
 
 ### In Plain English
-These screens exist so the app doesn't crash when routing sends a user to their dashboard. Right now they just show a welcome message and a sign-out button. They will be replaced with real content in Milestones 3 and 4.
+This is where the gamification comes alive. At the top, a large "Level N" display shows where the student stands, with an XP progress bar showing how far they are toward the next level. Below that, every signed-up opportunity is listed. Each shows one of four states: a "Log hours" button (not yet submitted), "Pending verification" (submitted and waiting), a green "Verified" confirmation with the XP earned, or a red "Rejected" notice.
+
+The dashboard refreshes the profile from the database every time it loads. This is important because XP is awarded by a database trigger — the Zustand store might have a stale XP value from when the user last authenticated. By fetching a fresh profile on mount, the student always sees their actual XP.
 
 ### How It Works
-Both read `profile` from the auth store to display the user's name. The sign-out button calls `signOut()`, clears the store, and redirects to sign-in.
+1. On mount, three parallel calls: `getProfile` (fresh XP/level), `getSignedUpOpportunities` (their list), `getStudentHourLogs` (their submissions).
+2. Hour logs are stored in a `logMap` — a dictionary keyed by `opportunity_id`. This makes it instant to look up whether a specific opportunity has been logged.
+3. For each opportunity in the list, check `logMap[opp.id]` to determine which status UI to render.
+
+### Key Code
+```ts
+const map: Record<string, HourLog> = {};
+for (const log of logs) map[log.opportunity_id] = log;
+setLogMap(map);
+```
+Instead of calling `.find()` on the logs array for every opportunity (which is slow for large lists), we build a dictionary once. Looking up `logMap[opportunityId]` is instant.
+
+```ts
+const xpIntoLevel = xp % 100;
+const progressPercent = Math.round((xpIntoLevel / 100) * 100);
+```
+`xp % 100` gives the remainder when dividing by 100 — the XP earned within the current level. If the student has 250 XP (Level 3), then `250 % 100 = 50` — they're 50% through Level 3.
+
+```tsx
+<View className="h-2 bg-brand rounded-full" style={{ width: `${progressPercent}%` }} />
+```
+The progress bar uses an inline `style` for width because Tailwind can't express dynamic percentage widths as class names. This is one of the few legitimate uses of `style` prop.
+
+### What I Should Remember
+- Always refresh the profile on dashboard mount — the Zustand store may have stale XP from the last auth check.
+- `logMap` is a dictionary for O(1) lookup, not an array you search through.
+- `xp % 100` gives progress within the current level (works because each level is exactly 100 XP wide).
+- The progress bar needs `style={{ width: '${n}%' }}` because dynamic values can't be Tailwind classes.
+
+---
+
+## File: `app/(org)/dashboard.tsx`
+
+### Purpose
+The organization's home screen — shows the count of pending hour submissions and links to the verification screen.
+
+### In Plain English
+Organizations have one primary job in Greenie: verify that students actually completed the service they claim. The dashboard makes this obvious by putting the pending count front and center. Tapping it goes to the verifications list. There's also a sign-out button at the bottom.
+
+### What I Should Remember
+- The pending count is fetched on mount and displayed as a tappable card.
+- Tapping the card navigates to `/(org)/verifications`.
+- Sign-out follows the same three-step pattern: call `signOut()`, clear the store, navigate to sign-in.
+
+---
+
+## File: `types/hours.ts`
+
+### Purpose
+Defines the shape of hour log data so TypeScript can catch mistakes across all files that work with hour submissions.
+
+### In Plain English
+Same role as `types/auth.ts` and `types/opportunity.ts` — a contract that describes what a database row looks like. The `HourLog` interface mirrors the columns in the `hour_logs` table, plus two optional nested objects (`opportunities` and `profiles`) that appear when the query uses joins to fetch related data.
+
+### Key Code
+```ts
+opportunities?: {
+  title: string;
+  hours_value: number;
+};
+profiles?: {
+  full_name: string;
+  school_name: string | null;
+};
+```
+The `?` makes these optional — they're not always present. `getStudentHourLogs` fetches opportunity data; `getOrgPendingLogs` fetches both opportunity AND student profile data. The same type handles both query shapes.
+
+### What I Should Remember
+- `HourLog.actual_date` is a string like `"2026-07-20"` (a date, not a timestamp).
+- `HourLog.hours_logged` may come from Postgres as a string in some edge cases — always wrap with `Number(log.hours_logged)` before math.
+- `profiles?` in this type refers to the *student's* profile (via the `student_id` FK) — not the org's profile.
+
+---
+
+## File: `services/hours.ts`
+
+### Purpose
+All database operations related to hour logs — submitting, fetching, verifying, and rejecting.
+
+### In Plain English
+Five functions that hide the Supabase query details from screens. Screens call `verifyHourLog(id)` — they don't know or care that this triggers an XP update in the database. That separation is intentional: if we ever change how XP is calculated, we change the database trigger, and no screen code needs to change.
+
+### Key Code
+```ts
+export async function getOrgPendingLogs(orgId: string): Promise<HourLog[]> {
+  const { data, error } = await supabase
+    .from('hour_logs')
+    .select('*, opportunities!inner(title, hours_value, org_id), profiles(full_name, school_name)')
+    .eq('opportunities.org_id', orgId)
+    .eq('status', 'pending')
+    .order('submitted_at', { ascending: true });
+```
+`opportunities!inner` means: only return hour_logs that have a matching opportunity (an INNER JOIN). `.eq('opportunities.org_id', orgId)` filters to only opportunities owned by this org. `profiles(...)` joins the student's profile row via the `student_id` foreign key. Three tables, one query.
+
+```ts
+export async function verifyHourLog(logId: string): Promise<void> {
+  const { error } = await supabase
+    .from('hour_logs')
+    .update({ status: 'verified', verified_at: new Date().toISOString() })
+    .eq('id', logId);
+```
+The client just updates two columns. The Postgres trigger (`trigger_award_xp`) detects this status change and awards XP automatically. The client never knows or sends XP — the database handles it.
+
+### What I Should Remember
+- XP is awarded by a Postgres trigger when `status` changes to `'verified'`. The service function just updates the status — it doesn't know about XP at all.
+- `getStudentHourLogs` joins opportunities (for the title). `getOrgPendingLogs` joins both opportunities AND the student's profile.
+- `!inner` in a Supabase select makes it an INNER JOIN — rows without a matching related record are excluded.
+- Filtering on a joined table uses dot notation: `.eq('opportunities.org_id', orgId)`.
+
+---
+
+## File: `app/(student)/log-hours/[opportunityId].tsx`
+
+### Purpose
+The form where a student submits their hours after completing an opportunity.
+
+### In Plain English
+After signing up for a beach cleanup and showing up, the student opens this screen to record what they actually did. They enter: how many hours they completed, what date the service happened, and an optional description of what they did. The description matters — schools and counselors read it to understand what the student actually contributed.
+
+When submitted, a row is created in `hour_logs` with status `'pending'`. The student can't do anything else from here — they're done until the org verifies.
 
 ### Key Code
 ```tsx
-async function handleSignOut() {
-  await signOut();
-  setSession(null);
-  setProfile(null);
-  router.replace('/(auth)/sign-in');
-}
+const { opportunityId, title, hoursValue } = useLocalSearchParams<{
+  opportunityId: string;
+  title: string;
+  hoursValue: string;
+}>();
 ```
-Sign-out is three steps: tell Supabase to end the session, clear our local store (so the app doesn't think anyone is still logged in), and navigate back to sign-in.
+The `[opportunityId]` route segment provides the ID. `title` and `hoursValue` are passed as query parameters from the dashboard when navigating here — this avoids an extra database fetch just to show the opportunity title.
+
+```ts
+const today = new Date().toISOString().split('T')[0];
+```
+`new Date().toISOString()` gives something like `"2026-07-24T15:30:00.000Z"`. Splitting at `'T'` and taking index 0 gives `"2026-07-24"` — the YYYY-MM-DD format Postgres expects for a `date` column.
+
+```ts
+if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { ... }
+```
+A simple regex validation. `\d{4}` means exactly 4 digits, `-` is a literal dash, `\d{2}` is exactly 2 digits. This catches obvious mistakes before making a network request.
 
 ### What I Should Remember
-- These are placeholder screens — their content will be replaced.
-- Always clear the local store on sign-out, not just call `signOut()`. Otherwise the app thinks the user is still logged in.
-- `router.replace` on sign-out prevents the user from pressing "back" to return to a logged-in screen.
+- `[opportunityId]` in the filename = dynamic route. The value is read with `useLocalSearchParams`.
+- `title` and `hoursValue` come as query params (not route segments) — they're passed by the dashboard when navigating.
+- The YYYY-MM-DD format is required by Postgres `date` columns — the regex ensures this before submitting.
+- After submission, the screen shows a confirmation and the student navigates back to dashboard with `router.replace` (not `push`) so they can't go back to the form.
+
+---
+
+## File: `app/(org)/verifications.tsx`
+
+### Purpose
+The screen where organizations review pending hour submissions and either verify or reject them.
+
+### In Plain English
+This is the most consequential screen in the app — the moment an org taps "Verify," a Postgres trigger fires and XP is awarded to the student. The screen loads all pending logs for the org's opportunities, showing each student's name, school, the opportunity they're claiming, the hours and date, and their description of what they did.
+
+Tapping Verify or Reject immediately removes the card from the list (optimistic update — assume success) and calls the service function. The list shrinks as the org works through it.
+
+### How It Works
+1. On mount, fetch all pending logs via `getOrgPendingLogs(profile.id)`.
+2. Each card shows: student name + school, opportunity title, hours + formatted date, and description.
+3. Verify/Reject buttons call service functions, then filter the log out of the local state array.
+4. `actionLoading` tracks which specific log is being processed — only that card's buttons are disabled, not the whole list.
+
+### Key Code
+```ts
+const [actionLoading, setActionLoading] = useState<string | null>(null);
+```
+Rather than a boolean `loading` that would disable every button, we store the ID of the log currently being acted on. This way the org can see that one card is processing while the rest remain interactive.
+
+```ts
+setLogs((prev) => prev.filter((l) => l.id !== logId));
+```
+Optimistic update — remove the card immediately when the action is triggered, without waiting for the network response. This feels instant. If the request fails (caught by the `catch`), the card stays gone — acceptable for MVP; a production version would restore it.
+
+```ts
+const dateStr = new Date(log.actual_date + 'T12:00:00').toLocaleDateString(...)
+```
+`actual_date` from Postgres is `"2026-07-20"` — a date with no time. Adding `T12:00:00` before parsing prevents timezone issues: midnight of a date can round to the previous day in some timezones. Noon never crosses a day boundary.
+
+### What I Should Remember
+- Verifying a log here triggers the database XP trigger — the org doesn't send XP, they just update status.
+- `actionLoading` stores a log ID, not a boolean, so only one card is disabled at a time.
+- Optimistic updates (remove card immediately) make the UI feel responsive. The tradeoff is that a failed network call leaves the card gone — acceptable for MVP.
+- Date parsing: always append `T12:00:00` when converting a date-only string to a `Date` object to avoid timezone boundary bugs.
