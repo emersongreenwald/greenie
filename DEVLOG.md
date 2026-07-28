@@ -4,6 +4,29 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-28
+
+**What we did**
+Completed the UI milestone (Milestone 5): premium visual redesign across the entire app. Updated the color system to a warm, earthy palette (forest green `#557A62`, cream `#faf8f4`, charcoal `#1c2620`, gold for XP). Installed Manrope as the custom typeface (ExtraBold for wordmarks, Bold for headings, SemiBold for labels, Regular for body). Added Ionicons for all icons (calendar, location, time, checkmarks, back arrows). Converted the student layout from a Stack to a tab bar with compass (discover) and person-circle (profile) tabs. Built a new `XPBar` component in gold. Added a `shadows.card` constant in theme.ts to eliminate repeated shadow declarations across cards.
+
+**Decisions made**
+- Discover is the home tab, not the dashboard. Matches the mental model of TikTok/Duolingo — the action is the home, the stats are the profile. Students open the app to find opportunities, not to review their stats.
+- No emojis anywhere. All iconography from Ionicons (`@expo/vector-icons`, already bundled with Expo).
+- "greenie" wordmark as text (Manrope ExtraBold, brand green) until a custom logo/mascot is designed.
+- All UI text is lowercase to match the app's tone — casual, peer-to-peer, not institutional.
+- Streak shows "0" as a placeholder. The visual is correct; the tracking backend is the next milestone.
+- `fonts` and `shadows.card` exported from `constants/theme.ts` — all per-screen repetition eliminated.
+- Tab bar routes `opportunity/[id]` and `log-hours/[opportunityId]` are declared with `href: null` to hide them from the tab bar while keeping them navigable.
+
+**Challenges**
+- Fonts must be loaded before the root layout renders — added `useFonts` hook from `@expo-google-fonts/manrope` and returned `null` from the root layout until they load (splash screen stays visible).
+- Font families in React Native require `style={{ fontFamily: '...' }}` alongside `className` — there's no Tailwind class for custom fonts. Every text element needs both.
+
+**Next steps**
+Streak tracking backend: add a `last_active_date` and `streak` field to the `profiles` table, update via trigger or client logic whenever a student completes a service log, and wire up the streak display on the profile screen.
+
+---
+
 ## 2026-07-24
 
 **What we did**

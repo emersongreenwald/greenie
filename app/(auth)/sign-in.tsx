@@ -5,6 +5,7 @@ import { signIn, getProfile } from '../../services/auth';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { fonts } from '../../constants/theme';
 
 export default function SignIn() {
   const router = useRouter();
@@ -36,18 +37,25 @@ export default function SignIn() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-white"
+      className="flex-1 bg-cream"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
         contentContainerClassName="flex-1 justify-center px-6"
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-3xl font-bold text-brand mb-2">Greenie</Text>
-        <Text className="text-gray-500 mb-8">Sign in to continue</Text>
+        <Text style={{ fontFamily: fonts.extrabold }} className="text-[28px] text-brand mb-1">
+          greenie
+        </Text>
+        <Text style={{ fontFamily: fonts.bold }} className="text-[24px] text-charcoal mb-1">
+          welcome back.
+        </Text>
+        <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-sm mb-8">
+          good to see you again.
+        </Text>
 
         <Input
-          placeholder="Email"
+          placeholder="email"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -55,29 +63,33 @@ export default function SignIn() {
           keyboardType="email-address"
         />
         <Input
-          placeholder="Password"
+          placeholder="password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
-        {error ? <Text className="text-red-500 text-sm mb-4">{error}</Text> : null}
+        {error ? (
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#dc4f4f] text-sm mb-4">
+            {error}
+          </Text>
+        ) : null}
 
         <Button
-          label="Sign in"
-          loadingLabel="Signing in…"
+          label="sign in"
+          loadingLabel="signing in…"
           onPress={handleSignIn}
           loading={loading}
         />
 
-        <View className="flex-row justify-center gap-1 mt-6">
-          <Text className="text-gray-500">New here?</Text>
+        <View className="flex-row justify-center flex-wrap gap-1 mt-6">
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-sm">new here?</Text>
           <Link href="/(auth)/sign-up-student">
-            <Text className="text-brand font-medium">Student sign up</Text>
+            <Text style={{ fontFamily: fonts.semibold }} className="text-brand text-sm">student sign up</Text>
           </Link>
-          <Text className="text-gray-500">or</Text>
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-sm">or</Text>
           <Link href="/(auth)/sign-up-org">
-            <Text className="text-brand font-medium">Organization sign up</Text>
+            <Text style={{ fontFamily: fonts.semibold }} className="text-brand text-sm">organization sign up</Text>
           </Link>
         </View>
       </ScrollView>

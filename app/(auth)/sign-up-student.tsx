@@ -5,6 +5,7 @@ import { signUp, getProfile } from '../../services/auth';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { fonts } from '../../constants/theme';
 
 export default function SignUpStudent() {
   const router = useRouter();
@@ -22,12 +23,12 @@ export default function SignUpStudent() {
     setError('');
 
     if (!schoolName.trim()) {
-      setError('Please enter your school name.');
+      setError('please enter your school name.');
       return;
     }
     const year = parseInt(graduationYear, 10);
     if (isNaN(year) || year < 2024 || year > 2032) {
-      setError('Please enter a valid graduation year (e.g. 2026).');
+      setError('please enter a valid graduation year (e.g. 2026).');
       return;
     }
 
@@ -49,37 +50,44 @@ export default function SignUpStudent() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-white"
+      className="flex-1 bg-cream"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerClassName="flex-1 justify-center px-6"
+        contentContainerClassName="px-6 pt-20 pb-12"
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-3xl font-bold text-brand mb-2">Student sign up</Text>
-        <Text className="text-gray-500 mb-8">Create your Greenie account</Text>
+        <Text style={{ fontFamily: fonts.extrabold }} className="text-[28px] text-brand mb-1">
+          greenie
+        </Text>
+        <Text style={{ fontFamily: fonts.bold }} className="text-[24px] text-charcoal mb-1">
+          create your account.
+        </Text>
+        <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-sm mb-8">
+          let's get you started.
+        </Text>
 
         <Input
-          placeholder="Full name"
+          placeholder="full name"
           value={fullName}
           onChangeText={setFullName}
           autoCorrect={false}
         />
         <Input
-          placeholder="School name (e.g. East Hampton High School)"
+          placeholder="school name (e.g. east hampton high school)"
           value={schoolName}
           onChangeText={setSchoolName}
           autoCorrect={false}
         />
         <Input
-          placeholder="Graduation year (e.g. 2026)"
+          placeholder="graduation year (e.g. 2026)"
           value={graduationYear}
           onChangeText={setGraduationYear}
           keyboardType="number-pad"
           autoCorrect={false}
         />
         <Input
-          placeholder="Email"
+          placeholder="email"
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -87,25 +95,31 @@ export default function SignUpStudent() {
           keyboardType="email-address"
         />
         <Input
-          placeholder="Password"
+          placeholder="password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
 
-        {error ? <Text className="text-red-500 text-sm mb-4">{error}</Text> : null}
+        {error ? (
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#dc4f4f] text-sm mb-4">
+            {error}
+          </Text>
+        ) : null}
 
         <Button
-          label="Create account"
-          loadingLabel="Creating account…"
+          label="create account"
+          loadingLabel="creating account…"
           onPress={handleSignUp}
           loading={loading}
         />
 
         <View className="flex-row justify-center gap-1 mt-6">
-          <Text className="text-gray-500">Already have an account?</Text>
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-sm">
+            already have an account?
+          </Text>
           <Link href="/(auth)/sign-in">
-            <Text className="text-brand font-medium">Sign in</Text>
+            <Text style={{ fontFamily: fonts.semibold }} className="text-brand text-sm">sign in</Text>
           </Link>
         </View>
       </ScrollView>

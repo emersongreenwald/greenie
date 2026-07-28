@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { signOut } from '../../services/auth';
 import { getOrgPendingLogs } from '../../services/hours';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { Button } from '../../components/ui/Button';
-import { colors } from '../../constants/theme';
+import { colors, fonts, shadows } from '../../constants/theme';
 
 export default function OrgDashboard() {
   const router = useRouter();
@@ -31,33 +32,48 @@ export default function OrgDashboard() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="pt-16 pb-4 px-6 bg-white border-b border-gray-100">
-        <Text className="text-2xl font-bold text-gray-900">{profile?.full_name}</Text>
-        <Text className="text-gray-500 text-sm">Organization dashboard</Text>
+    <View className="flex-1 bg-cream">
+      <View className="pt-16 pb-6 px-6">
+        <Text style={{ fontFamily: fonts.extrabold }} className="text-[28px] text-brand mb-0.5">
+          greenie
+        </Text>
+        <Text style={{ fontFamily: fonts.bold }} className="text-[20px] text-charcoal">
+          {profile?.full_name.toLowerCase()}
+        </Text>
+        <Text style={{ fontFamily: fonts.regular }} className="text-xs text-[#7e9488] mt-0.5">
+          organization dashboard
+        </Text>
       </View>
 
-      <View className="px-6 mt-6">
+      <View className="px-6">
         <TouchableOpacity
-          className="bg-white rounded-2xl p-6 shadow-sm"
+          className="bg-white rounded-2xl p-5"
+          style={shadows.card}
           onPress={() => router.push('/(org)/verifications')}
         >
           <View className="flex-row items-center justify-between">
             <View>
-              <Text className="text-gray-500 text-sm mb-1">Pending verifications</Text>
+              <Text style={{ fontFamily: fonts.regular }} className="text-xs text-[#7e9488] mb-1">
+                pending verifications
+              </Text>
               {loading ? (
                 <ActivityIndicator color={colors.brand.default} />
               ) : (
-                <Text className="text-3xl font-bold text-gray-900">{pendingCount}</Text>
+                <Text style={{ fontFamily: fonts.extrabold }} className="text-4xl text-charcoal">
+                  {pendingCount}
+                </Text>
               )}
             </View>
-            <Text className="text-brand font-medium">Review →</Text>
+            <View className="flex-row items-center gap-1">
+              <Text style={{ fontFamily: fonts.semibold }} className="text-brand text-sm">review</Text>
+              <Ionicons name="arrow-forward" size={14} color={colors.brand.default} />
+            </View>
           </View>
         </TouchableOpacity>
       </View>
 
       <View className="px-6 mt-auto pb-12">
-        <Button label="Sign out" variant="danger" onPress={handleSignOut} />
+        <Button label="sign out" variant="danger" onPress={handleSignOut} />
       </View>
     </View>
   );

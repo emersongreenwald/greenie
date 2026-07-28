@@ -55,6 +55,16 @@ Phase 4 (district adoption) aggregates `hour_logs` across all schools in a distr
 
 None of those phases require changes to the `hour_logs` schema — just new ways of querying the data that's already there. This is good database design: design tables around facts (a student did X hours on Y date for Z organization), not around features (what the current UI needs to show).
 
+### Decision 6: Design tokens live in two files; fonts need `style` props, not class names
+
+In the UI milestone we added `fonts`, `shadows`, and new color tokens. Here's how the system works now:
+
+- **Color classes** (`bg-cream`, `text-charcoal`, `bg-gold`, `border-blush`) come from `tailwind.config.js`. Tailwind generates them at build time.
+- **Color values** for JavaScript props (e.g. `ActivityIndicator color={}`, shadow `shadowColor`) come from `constants/theme.ts`.
+- **Font families** cannot be expressed as Tailwind classes in React Native — Tailwind has no concept of custom font families. Every text element needs `style={{ fontFamily: fonts.bold }}` alongside `className` for everything else. This is the correct pattern; it's not a workaround.
+- **Shadows** are defined once in `theme.ts` as `shadows.card` and applied via `style={shadows.card}` on card views. iOS uses `shadowColor/shadowOpacity/shadowRadius/shadowOffset`; Android uses `elevation`. Both must be present for cross-platform consistency.
+- **Fonts must load before the app renders.** The `useFonts` hook in `app/_layout.tsx` blocks rendering (returns `null`) until all five Manrope weights are ready. Without this, text would briefly flash with the system default font.
+
 ### Decision 5: No school accounts in MVP — but the data is ready for them
 
 School integration (Phase 3) requires counselors to log in, see their students, and track graduation requirements. That's a significant feature. We're not building it yet for two reasons: (1) it's as complex as everything we've built so far, and (2) it requires a go-to-market step — a school IT admin has to actually adopt the platform.
@@ -744,18 +754,55 @@ This listener fires automatically whenever Supabase detects a login or logout �
 
 ---
 
+## File: `components/ui/XPBar.tsx`
+
+### Purpose
+A reusable gold progress bar that shows a student's XP progress within their current level.
+
+### In Plain English
+The XP system gives 100 XP per level. This component takes the student's total `xp` and `level`, figures out how far they are through the current level, and draws a gold bar that fills proportionally. The left label shows total XP; the right label shows how much is left to the next level.
+
+### Key Code
+```tsx
+const xpIntoLevel = xp % 100;
+const progressPercent = Math.min(Math.round((xpIntoLevel / 100) * 100), 100);
+
+<View className="h-2 bg-[#f0ebe0] rounded-full overflow-hidden">
+  <View className="h-2 bg-gold rounded-full" style={{ width: `${progressPercent}%` }} />
+</View>
+```
+`xp % 100` gives the remainder — the XP earned within the current level (0–99). `style={{ width: '${n}%' }}` must be an inline style because Tailwind can't express dynamic percentage widths as class names.
+
+### What I Should Remember
+- `xp % 100` works because each level is exactly 100 XP wide.
+- The progress bar uses inline `style` for width — this is one of the few legitimate uses of `style` prop instead of `className`.
+- `Math.min(..., 100)` prevents the bar from overflowing if XP gets ahead of the display.
+
+---
+
 ## File: `app/(auth)/_layout.tsx`, `app/(student)/_layout.tsx`, `app/(org)/_layout.tsx`
 
 ### Purpose
-Define navigation containers for each group of screens, with the header hidden.
+Define navigation containers for each group of screens.
 
 ### In Plain English
-Expo Router uses "route groups" — folders with parentheses in the name, like `(auth)`. The folder name is invisible to navigation (the URL is `/sign-in`, not `/(auth)/sign-in`). The `_layout.tsx` inside each group defines how screens in that group are wrapped. All three layouts just render `<Stack screenOptions={{ headerShown: false }} />` — a stack navigator with no visible header bar.
+Expo Router uses "route groups" — folders with parentheses in the name, like `(auth)`. The folder name is invisible to navigation (the URL is `/sign-in`, not `/(auth)/sign-in`). The `_layout.tsx` inside each group defines how screens in that group are wrapped.
+
+`(auth)` and `(org)` use `<Stack screenOptions={{ headerShown: false }} />` — a stack navigator with no visible header bar.
+
+`(student)` uses `<Tabs>` — a tab bar at the bottom with two tabs: Discover (compass icon) and Profile (person-circle icon). The `opportunity/[id]` and `log-hours/[opportunityId]` routes are declared with `href: null` so they're navigable but invisible in the tab bar.
+
+### Key Code
+```tsx
+<Tabs.Screen name="opportunity/[id]" options={{ href: null }} />
+```
+`href: null` tells Expo Router: this route exists and can be navigated to, but don't show it as a tab button. Without this declaration, the tab bar would either show a mysterious extra tab or throw a routing error.
 
 ### What I Should Remember
 - Folders named `(like-this)` are route groups — they group screens without affecting the URL.
-- `_layout.tsx` must exist in every route group or Expo Router won't recognize it.
-- `headerShown: false` hides the default navigation bar that would otherwise appear at the top of every screen.
+- `_layout.tsx` must exist in every route group.
+- `headerShown: false` hides the default navigation bar.
+- `href: null` hides a route from the tab bar while keeping it navigable — required for any screen inside a Tabs layout that should be accessed via navigation, not a tab tap.
 
 ---
 

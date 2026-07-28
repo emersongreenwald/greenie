@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { getOpportunity, signUpForOpportunity, getStudentSignups } from '../../../services/opportunities';
 import { useAuthStore } from '../../../stores/useAuthStore';
 import { Button } from '../../../components/ui/Button';
-import { colors } from '../../../constants/theme';
+import { colors, fonts, shadows } from '../../../constants/theme';
 import type { Opportunity } from '../../../types/opportunity';
 
 export default function OpportunityDetail() {
@@ -40,7 +41,7 @@ export default function OpportunityDetail() {
       await signUpForOpportunity(opportunity.id, profile.id);
       setAlreadySignedUp(true);
     } catch (e) {
-      setError((e as any)?.message || 'Sign up failed');
+      setError((e as any)?.message || 'sign up failed');
     } finally {
       setSigningUp(false);
     }
@@ -48,7 +49,7 @@ export default function OpportunityDetail() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-cream">
         <ActivityIndicator color={colors.brand.default} />
       </View>
     );
@@ -64,37 +65,61 @@ export default function OpportunityDetail() {
   });
 
   return (
-    <ScrollView className="flex-1 bg-white">
-      <TouchableOpacity className="pt-16 px-6 pb-4" onPress={() => router.back()}>
-        <Text className="text-brand font-medium">← Back</Text>
+    <ScrollView className="flex-1 bg-cream">
+      <TouchableOpacity
+        className="pt-16 px-6 pb-4 flex-row items-center gap-1"
+        onPress={() => router.back()}
+      >
+        <Ionicons name="arrow-back" size={16} color={colors.brand.default} />
+        <Text style={{ fontFamily: fonts.medium }} className="text-brand text-sm">back</Text>
       </TouchableOpacity>
 
       <View className="px-6">
-        <Text className="text-2xl font-bold text-gray-900 mb-1">{opportunity.title}</Text>
-        <Text className="text-brand font-medium mb-6">
+        <Text style={{ fontFamily: fonts.bold }} className="text-[24px] text-charcoal mb-1">
+          {opportunity.title}
+        </Text>
+        <Text style={{ fontFamily: fonts.medium }} className="text-brand mb-6">
           {opportunity.profiles?.full_name ?? 'Organization'}
         </Text>
 
-        <View className="bg-gray-50 rounded-xl p-4 mb-6 gap-2">
-          <Text className="text-gray-700">{date}</Text>
-          <Text className="text-gray-700">{opportunity.location}</Text>
-          <Text className="text-brand-dark font-semibold">
-            {opportunity.hours_value} {opportunity.hours_value === 1 ? 'hour' : 'hours'}
-          </Text>
+        <View className="bg-white rounded-2xl p-4 mb-6 gap-3" style={shadows.card}>
+          <View className="flex-row items-center gap-2.5">
+            <Ionicons name="calendar-outline" size={15} color={colors.text.muted} />
+            <Text style={{ fontFamily: fonts.regular }} className="text-[#4a5e54] text-sm">{date}</Text>
+          </View>
+          <View className="flex-row items-center gap-2.5">
+            <Ionicons name="location-outline" size={15} color={colors.text.muted} />
+            <Text style={{ fontFamily: fonts.regular }} className="text-[#4a5e54] text-sm">{opportunity.location}</Text>
+          </View>
+          <View className="flex-row items-center gap-2.5">
+            <Ionicons name="time-outline" size={15} color={colors.gold.default} />
+            <Text style={{ fontFamily: fonts.semibold }} className="text-gold text-sm">
+              {opportunity.hours_value} {opportunity.hours_value === 1 ? 'hour' : 'hours'}
+            </Text>
+          </View>
         </View>
 
-        <Text className="text-gray-700 leading-7 mb-8">{opportunity.description}</Text>
+        <Text style={{ fontFamily: fonts.regular }} className="text-[#4a5e54] leading-7 mb-8">
+          {opportunity.description}
+        </Text>
 
-        {error ? <Text className="text-red-500 mb-4">{error}</Text> : null}
+        {error ? (
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#dc4f4f] mb-4 text-sm">
+            {error}
+          </Text>
+        ) : null}
 
         {alreadySignedUp ? (
-          <View className="bg-brand-muted border border-brand-border rounded-xl py-4 items-center mb-8">
-            <Text className="text-brand-dark font-semibold">You're signed up</Text>
+          <View className="bg-brand-muted border border-brand-border rounded-2xl py-4 items-center mb-8">
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="checkmark-circle" size={16} color={colors.brand.dark} />
+              <Text style={{ fontFamily: fonts.semibold }} className="text-brand-dark">you're in!</Text>
+            </View>
           </View>
         ) : (
           <Button
-            label="Sign up for this opportunity"
-            loadingLabel="Signing up…"
+            label="i'm in!"
+            loadingLabel="signing up…"
             onPress={handleSignUp}
             loading={signingUp}
           />

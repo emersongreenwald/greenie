@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SwipeCard } from '../../components/SwipeCard';
 import { OpportunityCard } from '../../components/OpportunityCard';
 import { getOpportunities, signUpForOpportunity } from '../../services/opportunities';
 import { useAuthStore } from '../../stores/useAuthStore';
-import { colors } from '../../constants/theme';
+import { colors, fonts } from '../../constants/theme';
 import type { Opportunity } from '../../types/opportunity';
 
 export default function Discover() {
@@ -43,7 +43,7 @@ export default function Discover() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
+      <View className="flex-1 items-center justify-center bg-cream">
         <ActivityIndicator color={colors.brand.default} />
       </View>
     );
@@ -51,30 +51,31 @@ export default function Discover() {
 
   if (currentIndex >= opportunities.length) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 px-8">
-        <Text className="text-2xl font-bold text-gray-900 mb-3">You're all caught up</Text>
-        <Text className="text-gray-500 text-center">
-          No more opportunities right now. Check back soon.
+      <View className="flex-1 items-center justify-center bg-cream px-8">
+        <Text style={{ fontFamily: fonts.bold }} className="text-[22px] text-charcoal mb-3">
+          you're all caught up
+        </Text>
+        <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-sm text-center">
+          no more opportunities right now.{'\n'}check back soon.
         </Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="pt-16 pb-4 px-6 flex-row items-center justify-between">
-        <View>
-          <Text className="text-2xl font-bold text-gray-900">Discover</Text>
-          <Text className="text-gray-500">Swipe right to sign up · Tap to learn more</Text>
-        </View>
-        <TouchableOpacity onPress={() => router.push('/(student)/dashboard')}>
-          <Text className="text-brand font-medium">My Hours</Text>
-        </TouchableOpacity>
+    <View className="flex-1 bg-cream">
+      <View className="pt-16 pb-4 px-6">
+        <Text style={{ fontFamily: fonts.extrabold }} className="text-[28px] text-brand">
+          greenie
+        </Text>
+        <Text style={{ fontFamily: fonts.regular }} className="text-xs text-[#7e9488] mt-0.5">
+          swipe right to join · tap to learn more
+        </Text>
       </View>
 
       <View className="flex-1 items-center justify-center">
         {opportunities[currentIndex + 1] && (
-          <View className="absolute opacity-60 scale-95">
+          <View className="absolute opacity-50" style={{ transform: [{ scale: 0.94 }] }}>
             <OpportunityCard opportunity={opportunities[currentIndex + 1]} />
           </View>
         )}
@@ -89,8 +90,8 @@ export default function Discover() {
         </SwipeCard>
       </View>
 
-      <View className="pb-12 items-center">
-        <Text className="text-gray-400 text-sm">
+      <View className="pb-4 items-center">
+        <Text style={{ fontFamily: fonts.regular }} className="text-xs text-[#7e9488]">
           {opportunities.length - currentIndex} remaining
         </Text>
       </View>
