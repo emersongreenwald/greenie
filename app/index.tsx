@@ -14,7 +14,7 @@ export default function Index() {
     );
   }
 
-  if (!session) return <Redirect href="/(auth)/sign-in" />;
+  if (!session) return <Redirect href="/(auth)/welcome" />;
   if (profile?.account_type === 'student') return <Redirect href="/(student)/discover" />;
   return <Redirect href="/(org)/dashboard" />;
 }

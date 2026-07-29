@@ -7,7 +7,7 @@ export interface Opportunity {
   date: string;
   hours_value: number;
   created_at: string;
-  profiles?: { full_name: string };
+  profiles?: { full_name: string; verified?: boolean };
 }
 
 export interface OpportunitySignup {

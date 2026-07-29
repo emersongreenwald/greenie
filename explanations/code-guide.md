@@ -65,6 +65,14 @@ In the UI milestone we added `fonts`, `shadows`, and new color tokens. Here's ho
 - **Shadows** are defined once in `theme.ts` as `shadows.card` and applied via `style={shadows.card}` on card views. iOS uses `shadowColor/shadowOpacity/shadowRadius/shadowOffset`; Android uses `elevation`. Both must be present for cross-platform consistency.
 - **Fonts must load before the app renders.** The `useFonts` hook in `app/_layout.tsx` blocks rendering (returns `null`) until all five Manrope weights are ready. Without this, text would briefly flash with the system default font.
 
+### Decision 7: Verified orgs — trust gate at the account level, not the opportunity level
+
+When an org signs up, a `verified` boolean on their profile row defaults to `false`. Their opportunities are created immediately but are invisible to students until the boolean is flipped to `true` manually in Supabase.
+
+This is a deliberate product decision: we don't require per-opportunity approval (which would slow down orgs and create a three-party coordination bottleneck) — we vet the org once, then trust everything they post. A guidance counselor asking "who's on this platform?" gets the same answer every time: only organizations we've personally confirmed.
+
+The filtering happens client-side in `getOpportunities()`: we join `profiles.verified` and filter before returning. This avoids unreliable PostgREST join-column filter syntax (a pitfall encountered earlier with `opportunity_signups`).
+
 ### Decision 5: No school accounts in MVP — but the data is ready for them
 
 School integration (Phase 3) requires counselors to log in, see their students, and track graduation requirements. That's a significant feature. We're not building it yet for two reasons: (1) it's as complex as everything we've built so far, and (2) it requires a go-to-market step — a school IT admin has to actually adopt the platform.
@@ -209,41 +217,61 @@ The `?` means this field might not be present. When we query `opportunities` wit
 - Types mirror database table columns exactly.
 - The `profiles?` nested field comes from a Supabase join, not a separate query.
 - `?` on a field means it's optional — TypeScript won't complain if it's missing.
+- `profiles.verified` is included in the type so `getOpportunities` can filter by it client-side before returning data to screens.
 
 ---
 
 ## File: `services/opportunities.ts`
 
 ### Purpose
-All database operations related to opportunities — fetching them, fetching a single one, signing up, and checking what a student has already signed up for.
+All database operations related to opportunities — fetching, creating, deleting, signing up, and checking what a student has already signed up for.
 
 ### In Plain English
-Same pattern as `services/auth.ts`. Screens never touch Supabase directly — they call these functions. Four functions: get all opportunities (for the swipe stack), get one opportunity (for the detail screen), sign up for an opportunity, and get a student's list of signups (so the detail screen knows whether to show "You're signed up" or a button).
+Same pattern as `services/auth.ts`. Screens never touch Supabase directly — they call these functions. The file now has two distinct sets of functions: student-facing (read-only, filtered to verified orgs) and org-facing (read/write, unfiltered for the org's own data).
 
 ### Key Code
 ```ts
-const { data, error } = await supabase
-  .from('opportunities')
-  .select('*, profiles(full_name)')
-  .order('date', { ascending: true });
-```
-`select('*, profiles(full_name)')` means: give me all columns from `opportunities`, AND for each row, look up the related row in `profiles` using the `org_id` foreign key and include just the `full_name`. This is a join in one line — no separate query needed.
-
-```ts
-export async function getStudentSignups(studentId: string): Promise<string[]> {
-  const { data } = await supabase
-    .from('opportunity_signups')
-    .select('opportunity_id')
-    .eq('student_id', studentId);
-  return data.map((row) => row.opportunity_id);
+// Student-facing: only show verified orgs
+export async function getOpportunities(): Promise<Opportunity[]> {
+  const { data, error } = await supabase
+    .from('opportunities')
+    .select('*, profiles(full_name, verified)')
+    .order('date', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).filter((opp: any) => opp.profiles?.verified === true);
 }
 ```
-Returns a plain array of opportunity IDs the student has signed up for. The detail screen checks `signups.includes(id)` to decide what to show.
+We join `profiles.verified` and filter client-side. PostgREST join-column filters (`.eq('profiles.verified', true)`) are unreliable — filtering in JavaScript after the fetch is safer for MVP scale.
+
+```ts
+// Org-facing: all their own opportunities, verified or not
+export async function getOrgOpportunities(orgId: string): Promise<Opportunity[]> {
+  const { data, error } = await supabase
+    .from('opportunities')
+    .select('*, profiles(full_name, verified)')
+    .eq('org_id', orgId)
+    .order('date', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+```
+Orgs see their own opportunities regardless of verification status — otherwise they'd have no way to confirm their post went through.
+
+```ts
+export async function createOpportunity(orgId, fields): Promise<void> {
+  const { error } = await supabase
+    .from('opportunities')
+    .insert({ org_id: orgId, ...fields });
+  if (error) throw error;
+}
+```
+The `org_id` is always the authenticated user's profile ID, enforced by the RLS INSERT policy (`WITH CHECK (org_id = auth.uid())`). The client can't spoof a different org.
 
 ### What I Should Remember
-- `.select('*, profiles(full_name)')` fetches a related row from another table in one query.
-- Services throw errors; screens catch them.
-- `getStudentSignups` returns an array of IDs so the detail screen can check membership with `.includes()`.
+- Student-facing `getOpportunities` filters by `profiles.verified === true` client-side — unverified orgs are invisible to students.
+- Org-facing `getOrgOpportunities` fetches by `org_id` — orgs always see their own regardless of verification.
+- `createOpportunity` and `deleteOpportunity` are protected by RLS policies — orgs can only touch their own rows.
+- `getStudentSignups` returns an array of opportunity IDs so the detail screen can check membership with `.includes()`.
 
 ---
 
@@ -296,10 +324,11 @@ Animated.timing(position, {
 
 ### What I Should Remember
 - `PanResponder` handles touch tracking; `Animated.ValueXY` handles the visual movement.
-- `interpolate` lets you derive one animated value from another (rotation from position).
+- `interpolate` lets you derive one animated value from another (rotation from position, badge opacity from position).
 - `useNativeDriver: true` is always preferred — it runs animations on the GPU, not in JavaScript.
 - This component is generic — it has no knowledge of opportunities. It just moves and calls callbacks.
 - `key={currentIndex}` in the parent is critical — it forces React to recreate this component for each new card, resetting all gesture state.
+- The "join" and "skip" badge overlays are derived entirely from `position.x` via `interpolate` — no new state. They're `position: 'absolute'` views rendered after `{children}` so they stack on top naturally.
 
 ---
 
@@ -627,6 +656,7 @@ return <Redirect href="/(org)/dashboard" />;
 - It never shows real UI — only a spinner or a redirect.
 - `initialized` prevents a premature redirect before the session check completes.
 - `<Redirect>` replaces the current screen in history; the user can't go back to it.
+- Unauthenticated users land on `/(auth)/welcome` (not sign-in directly) — new users see the onboarding screen; returning users tap "sign in" from there.
 
 ---
 
@@ -968,8 +998,8 @@ The organization's home screen — shows the count of pending hour submissions a
 Organizations have one primary job in Greenie: verify that students actually completed the service they claim. The dashboard makes this obvious by putting the pending count front and center. Tapping it goes to the verifications list. There's also a sign-out button at the bottom.
 
 ### What I Should Remember
-- The pending count is fetched on mount and displayed as a tappable card.
-- Tapping the card navigates to `/(org)/verifications`.
+- Two stat cards: pending verifications (→ verifications screen) and posted opportunities (→ opportunities management screen).
+- Both counts are fetched in parallel with `Promise.all` on mount.
 - Sign-out follows the same three-step pattern: call `signOut()`, clear the store, navigate to sign-in.
 
 ---
@@ -1114,3 +1144,78 @@ const dateStr = new Date(log.actual_date + 'T12:00:00').toLocaleDateString(...)
 - `actionLoading` stores a log ID, not a boolean, so only one card is disabled at a time.
 - Optimistic updates (remove card immediately) make the UI feel responsive. The tradeoff is that a failed network call leaves the card gone — acceptable for MVP.
 - Date parsing: always append `T12:00:00` when converting a date-only string to a `Date` object to avoid timezone boundary bugs.
+
+---
+
+## File: `app/(auth)/welcome.tsx`
+
+### Purpose
+The onboarding screen that new users land on before signing up.
+
+### In Plain English
+Unauthenticated users used to go straight to sign-in. Now they land here first. The screen has one job: communicate what Greenie is ("doing good shouldn't be hard.") and route the user to the right sign-up flow. Students and orgs have separate sign-up screens, so this screen acts as the fork in the road. Returning users tap "sign in" at the bottom.
+
+The wordmark is large and centered — the first thing a new user reads. The tagline is the emotional pitch. The buttons are at the bottom so the wordmark and tagline have room to breathe.
+
+### What I Should Remember
+- `app/index.tsx` redirects unauthenticated users here, not to sign-in.
+- "i'm a student" → `/(auth)/sign-up-student`; "i'm an organization" → `/(auth)/sign-up-org`; sign-in link → `/(auth)/sign-in`.
+- Layout uses `flex-1` for the wordmark area (expands to fill space) and a fixed-height button section at the bottom.
+
+---
+
+## File: `app/(org)/create-opportunity.tsx`
+
+### Purpose
+The form where an org posts a new volunteer opportunity.
+
+### In Plain English
+Five fields: title, description, location, date, and expected hours. The date field is plain text (`mm/dd/yyyy`) with a `parseDate()` helper that converts it to `yyyy-mm-dd` for Postgres. This avoids adding a date picker dependency while still being intuitive for US users. On submit, `createOpportunity()` inserts the row and the screen navigates back to the opportunities list.
+
+### Key Code
+```ts
+function parseDate(input: string): string | null {
+  const parts = input.trim().split('/');
+  if (parts.length !== 3) return null;
+  const [month, day, year] = parts;
+  if (!month || !day || !year || year.length !== 4) return null;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+```
+Converts `"08/15/2026"` → `"2026-08-15"`. Returns `null` on malformed input so the form can show an error before hitting the database.
+
+### What I Should Remember
+- `parseDate` converts mm/dd/yyyy → yyyy-mm-dd (what Postgres `date` columns expect).
+- The org's profile ID is the `org_id` — it comes from the auth store, not from user input.
+- `router.back()` on success returns to the opportunities list, which re-fetches on mount.
+
+---
+
+## File: `app/(org)/opportunities.tsx`
+
+### Purpose
+The org's list of their own posted opportunities, with the ability to delete any of them.
+
+### In Plain English
+The org can see everything they've posted — verified or not — with date, hours, and location. A trash icon on each card triggers a confirmation alert before deleting. A "post new" button in the header goes to the create screen. If the org has posted nothing yet, an empty state encourages them to get started.
+
+The delete uses `Alert.alert` with a destructive button style — the native iOS/Android confirmation dialog, which is familiar and prevents accidental deletion.
+
+### Key Code
+```ts
+Alert.alert(
+  'delete opportunity',
+  'students who signed up will no longer see this. are you sure?',
+  [
+    { text: 'cancel', style: 'cancel' },
+    { text: 'delete', style: 'destructive', onPress: async () => { ... } },
+  ]
+);
+```
+`style: 'destructive'` renders "delete" in red on iOS (native behavior). The `cancel` option always appears first.
+
+### What I Should Remember
+- Orgs see all their own opportunities here, including unverified ones (so they can confirm posts went through).
+- `deletingId` is a single ID (not boolean) so only the tapped card shows loading state.
+- After deletion, local state is filtered immediately (optimistic update) — same pattern as verifications.
+- The list does not auto-refresh after returning from create — `useEffect` re-runs on mount, so navigating back from the create screen triggers a fresh fetch.

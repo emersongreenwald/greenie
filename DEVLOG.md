@@ -4,6 +4,41 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-28 (continued x3)
+
+**What we did**
+Built the org opportunity management flow — the missing piece that makes orgs self-sufficient. Orgs can now post, view, and delete their own opportunities entirely within the app, without any SQL needed. Added verified-org filtering so only trusted orgs appear in the student feed.
+
+**Decisions made**
+- Added a `verified BOOLEAN DEFAULT false` column to profiles. Orgs can post immediately after signing up, but their opportunities are hidden from students until the `verified` flag is manually flipped in Supabase. This gives us a human review step without building an admin UI yet.
+- Filtering by verified orgs is done client-side in `getOpportunities()` (joining `profiles.verified` and filtering before return). Avoids unreliable PostgREST join-column filter syntax — a pitfall we hit earlier with `opportunity_signups`.
+- Org dashboard now shows two stat cards: pending verifications and opportunity count. Both tap through to their respective management screens.
+- Date input on the create form is plain text (`mm/dd/yyyy`) with a `parseDate()` helper that converts to `yyyy-mm-dd` for the database. Simple and reliable for MVP without adding a date picker dependency.
+- Input component extended to support `multiline` — sets `textAlignVertical: 'top'` and `minHeight: 100` on Android/iOS for the description field.
+
+**Next steps**
+School admin dashboard — the second pitch-critical piece. Lets guidance counselors see their students' verified hours.
+
+---
+
+## 2026-07-28 (continued x2)
+
+**What we did**
+Finished Phase 2 with three UX features: weekly streak tracking, a welcome/onboarding screen, and swipe overlays on the discover screen.
+
+**Decisions made**
+- Streaks are weekly and verification-triggered (same event as XP), so students never ask "why did my streak go up but my XP didn't?" ISO week format (`2026-W31`) stored in `last_streak_week` TEXT column — readable, sortable, and avoids timezone edge cases.
+- Three CASE branches in the trigger: already credited this week → no change; last week credited → increment; any gap → reset to 1. Multiple verifications in a single week only count once.
+- Streak label changed from "day streak" to "week streak" — sets correct expectations. Weekly cadence is more realistic for volunteer schedules than daily.
+- Pending-log note ("your streak will update once your hours are verified.") shown directly inside the streak card when a pending log exists. Reassuring, not anxious — students know exactly why the number hasn't moved.
+- Welcome screen redirects unauthenticated users instead of landing on sign-in. "doing good shouldn't be hard." is the first copy a new user reads.
+- Swipe overlays use interpolated opacity from the existing `position.x` Animated.Value — zero new state. "join" badge fades in on rightward drag (brand green, −12° tilt); "skip" badge fades in on leftward drag (warm taupe, +12° tilt).
+
+**Next steps**
+Phase 2 is complete. Consider: (1) real test with a Hamptons school/org, (2) adding a frog mascot illustration now that the visual system is stable, or (3) beginning Phase 3 (school admin dashboards, verified service record export).
+
+---
+
 ## 2026-07-28 (continued)
 
 **What we did**

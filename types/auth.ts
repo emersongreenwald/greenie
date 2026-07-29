@@ -10,6 +10,8 @@ export interface Profile {
   graduation_year: number | null;
   xp: number;
   level: number;
+  streak: number;
+  last_streak_week: string | null;
   // Org fields — null for students
   phone: string | null;
 }

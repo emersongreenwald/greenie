@@ -90,6 +90,7 @@ export default function StudentDashboard() {
 
   const verifiedLogs        = Object.values(logMap).filter((l) => l.status === 'verified');
   const totalVerifiedHours  = verifiedLogs.reduce((sum, l) => sum + Number(l.hours_logged), 0);
+  const hasPendingLog       = Object.values(logMap).some((l) => l.status === 'pending');
 
   return (
     <ScrollView className="flex-1 bg-cream" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -119,11 +120,16 @@ export default function StudentDashboard() {
         <View className="flex-1 bg-white rounded-2xl p-4" style={shadows.card}>
           <Ionicons name="flame-outline" size={18} color={colors.gold.default} />
           <Text style={{ fontFamily: fonts.extrabold }} className="text-3xl text-charcoal mt-2">
-            0
+            {profile.streak ?? 0}
           </Text>
           <Text style={{ fontFamily: fonts.regular }} className="text-xs text-[#7e9488] mt-0.5">
-            day streak
+            week streak
           </Text>
+          {hasPendingLog && (
+            <Text style={{ fontFamily: fonts.regular }} className="text-[10px] text-[#7e9488] mt-2 leading-4">
+              your streak will update once your hours are verified.
+            </Text>
+          )}
         </View>
       </View>
 

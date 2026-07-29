@@ -1,5 +1,6 @@
 import { useRef, ReactNode } from 'react';
-import { Animated, PanResponder, Dimensions, View } from 'react-native';
+import { Animated, PanResponder, Dimensions, Text } from 'react-native';
+import { colors, fonts } from '../constants/theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -68,6 +69,18 @@ export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap }: SwipeC
     outputRange: ['-15deg', '0deg', '15deg'],
   });
 
+  const joinOpacity = position.x.interpolate({
+    inputRange: [0, SWIPE_THRESHOLD],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const skipOpacity = position.x.interpolate({
+    inputRange: [-SWIPE_THRESHOLD, 0],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
   return (
     <Animated.View
       style={{
@@ -80,6 +93,42 @@ export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap }: SwipeC
       {...panResponder.panHandlers}
     >
       {children}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          opacity: joinOpacity,
+          transform: [{ rotate: '-12deg' }],
+          borderWidth: 2.5,
+          borderColor: colors.brand.default,
+          borderRadius: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 5,
+        }}
+      >
+        <Text style={{ fontFamily: fonts.extrabold, fontSize: 16, color: colors.brand.default }}>
+          join
+        </Text>
+      </Animated.View>
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+          opacity: skipOpacity,
+          transform: [{ rotate: '12deg' }],
+          borderWidth: 2.5,
+          borderColor: '#a09488',
+          borderRadius: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 5,
+        }}
+      >
+        <Text style={{ fontFamily: fonts.extrabold, fontSize: 16, color: '#a09488' }}>
+          skip
+        </Text>
+      </Animated.View>
     </Animated.View>
   );
 }

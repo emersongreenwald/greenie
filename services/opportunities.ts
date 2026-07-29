@@ -4,10 +4,10 @@ import type { Opportunity } from '../types/opportunity';
 export async function getOpportunities(): Promise<Opportunity[]> {
   const { data, error } = await supabase
     .from('opportunities')
-    .select('*, profiles(full_name)')
+    .select('*, profiles(full_name, verified)')
     .order('date', { ascending: true });
   if (error) throw error;
-  return data;
+  return (data ?? []).filter((opp: any) => opp.profiles?.verified === true);
 }
 
 export async function getOpportunity(id: string): Promise<Opportunity> {
@@ -24,6 +24,40 @@ export async function signUpForOpportunity(opportunityId: string, studentId: str
   const { error } = await supabase
     .from('opportunity_signups')
     .insert({ opportunity_id: opportunityId, student_id: studentId });
+  if (error) throw error;
+}
+
+export async function getOrgOpportunities(orgId: string): Promise<Opportunity[]> {
+  const { data, error } = await supabase
+    .from('opportunities')
+    .select('*, profiles(full_name, verified)')
+    .eq('org_id', orgId)
+    .order('date', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createOpportunity(
+  orgId: string,
+  fields: {
+    title: string;
+    description: string;
+    location: string;
+    date: string;
+    hours_value: number;
+  }
+): Promise<void> {
+  const { error } = await supabase
+    .from('opportunities')
+    .insert({ org_id: orgId, ...fields });
+  if (error) throw error;
+}
+
+export async function deleteOpportunity(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('opportunities')
+    .delete()
+    .eq('id', id);
   if (error) throw error;
 }
 

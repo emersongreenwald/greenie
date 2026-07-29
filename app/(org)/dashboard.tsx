@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from '../../services/auth';
 import { getOrgPendingLogs } from '../../services/hours';
+import { getOrgOpportunities } from '../../services/opportunities';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { Button } from '../../components/ui/Button';
 import { colors, fonts, shadows } from '../../constants/theme';
@@ -12,13 +13,18 @@ export default function OrgDashboard() {
   const router = useRouter();
   const { profile, setSession, setProfile } = useAuthStore();
   const [pendingCount, setPendingCount] = useState(0);
+  const [opportunityCount, setOpportunityCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       if (!profile) return;
-      const logs = await getOrgPendingLogs(profile.id);
+      const [logs, opps] = await Promise.all([
+        getOrgPendingLogs(profile.id),
+        getOrgOpportunities(profile.id),
+      ]);
       setPendingCount(logs.length);
+      setOpportunityCount(opps.length);
       setLoading(false);
     }
     load().catch(console.error);
@@ -45,7 +51,7 @@ export default function OrgDashboard() {
         </Text>
       </View>
 
-      <View className="px-6">
+      <View className="px-6 gap-3">
         <TouchableOpacity
           className="bg-white rounded-2xl p-5"
           style={shadows.card}
@@ -66,6 +72,31 @@ export default function OrgDashboard() {
             </View>
             <View className="flex-row items-center gap-1">
               <Text style={{ fontFamily: fonts.semibold }} className="text-brand text-sm">review</Text>
+              <Ionicons name="arrow-forward" size={14} color={colors.brand.default} />
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="bg-white rounded-2xl p-5"
+          style={shadows.card}
+          onPress={() => router.push('/(org)/opportunities')}
+        >
+          <View className="flex-row items-center justify-between">
+            <View>
+              <Text style={{ fontFamily: fonts.regular }} className="text-xs text-[#7e9488] mb-1">
+                your opportunities
+              </Text>
+              {loading ? (
+                <ActivityIndicator color={colors.brand.default} />
+              ) : (
+                <Text style={{ fontFamily: fonts.extrabold }} className="text-4xl text-charcoal">
+                  {opportunityCount}
+                </Text>
+              )}
+            </View>
+            <View className="flex-row items-center gap-1">
+              <Text style={{ fontFamily: fonts.semibold }} className="text-brand text-sm">manage</Text>
               <Ionicons name="arrow-forward" size={14} color={colors.brand.default} />
             </View>
           </View>
