@@ -1,4 +1,4 @@
-export type AccountType = 'student' | 'org';
+export type AccountType = 'student' | 'org' | 'school';
 
 export interface Profile {
   id: string;

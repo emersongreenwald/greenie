@@ -28,6 +28,14 @@ export default function Welcome() {
             </Text>
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity className="items-center py-1" onPress={() => router.push('/(auth)/sign-up-school')}>
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-xs">
+            school or district admin?{' '}
+            <Text style={{ fontFamily: fonts.semibold }} className="text-[#7e9488]">
+              get started →
+            </Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

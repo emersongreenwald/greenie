@@ -16,5 +16,6 @@ export default function Index() {
 
   if (!session) return <Redirect href="/(auth)/welcome" />;
   if (profile?.account_type === 'student') return <Redirect href="/(student)/discover" />;
+  if (profile?.account_type === 'school') return <Redirect href="/(school)/dashboard" />;
   return <Redirect href="/(org)/dashboard" />;
 }

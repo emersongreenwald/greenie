@@ -4,6 +4,23 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-29
+
+**What we did**
+Built the school admin dashboard — the final piece needed for a complete pitch. School admins can create accounts, sign in, and see every student from their school with verified hours and level, sorted by most hours.
+
+**Decisions made**
+- School matching is exact text — the school admin types "East Hampton High School" at sign-up, and students who typed the same string appear in their dashboard. Simple and correct for a controlled demo environment. Phase 3 will replace this with a proper `schools` table and student dropdown.
+- School admin link on welcome screen is intentionally smaller and more muted than student/org buttons. Schools are onboarded deliberately (not organically), so the path should be discoverable but not prominent.
+- The empty state in the school dashboard shows the exact school name in quotes ("students who sign up with '...' will appear here") — this immediately tells an admin if their school name doesn't match what students typed.
+- Two summary cards (students count + total hours) give the counselor a quick aggregate before scrolling into the student list.
+- Students are ranked by verified hours (descending) with a position number — familiar to school staff, and motivating for students if they ever see it.
+
+**Next steps**
+Full pitch-ready prototype is complete. Priority order: (1) real demo with at least one org and one school in the Hamptons, (2) fix any issues that surface during the demo, (3) frog mascot / polish pass before formal pitches in September.
+
+---
+
 ## 2026-07-28 (continued x3)
 
 **What we did**
