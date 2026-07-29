@@ -754,28 +754,79 @@ This listener fires automatically whenever Supabase detects a login or logout �
 
 ---
 
-## File: `components/ui/XPBar.tsx`
+## File: `components/Confetti.tsx`
 
 ### Purpose
-A reusable gold progress bar that shows a student's XP progress within their current level.
+A self-contained celebration component that bursts 38 pastel particles across the screen and finishes in about 1–1.5 seconds.
 
 ### In Plain English
-The XP system gives 100 XP per level. This component takes the student's total `xp` and `level`, figures out how far they are through the current level, and draws a gold bar that fills proportionally. The left label shows total XP; the right label shows how much is left to the next level.
+When the student submits hours, they deserve a moment of delight. This component renders a burst of small colored rectangles — pastels, not brand colors, so it feels fun rather than branded — that fall, drift sideways, spin, and fade. It mounts once, plays the animation, and then all particles are invisible. The screen underneath is fully interactive the whole time (`pointerEvents="none"` on the container).
+
+The color choice is intentional: using the same green and gold as the rest of the app would make confetti feel like a UI element. Using soft pinks, yellows, blues, peaches, and mint makes it feel like a real celebration.
+
+### How It Works
+1. On mount, `makeParticle()` creates 38 particles, each with its own random starting position, size, color, drift direction, and spin target.
+2. `useRef` stores the particle array so it's only created once (not recreated on every render).
+3. `useEffect` kicks off an `Animated.sequence` for each particle: a brief delay (0–150ms, creating the "burst" effect), then parallel animations for y position (fall), x position (drift), rotation, and opacity (fade in then out).
+4. The component positions itself over the whole screen with `StyleSheet.absoluteFill` and ignores all touches.
 
 ### Key Code
 ```tsx
-const xpIntoLevel = xp % 100;
-const progressPercent = Math.min(Math.round((xpIntoLevel / 100) * 100), 100);
-
-<View className="h-2 bg-[#f0ebe0] rounded-full overflow-hidden">
-  <View className="h-2 bg-gold rounded-full" style={{ width: `${progressPercent}%` }} />
-</View>
+// opacity sequence total = 60ms + (dur*0.5 - 60ms) + dur*0.5 = dur
+// This matches the movement duration exactly so all animations end together
+Animated.sequence([
+  Animated.timing(p.opacity, { toValue: 1, duration: 60, useNativeDriver: true }),
+  Animated.delay(dur * 0.5 - 60),
+  Animated.timing(p.opacity, { toValue: 0, duration: dur * 0.5, useNativeDriver: true }),
+]),
 ```
-`xp % 100` gives the remainder — the XP earned within the current level (0–99). `style={{ width: '${n}%' }}` must be an inline style because Tailwind can't express dynamic percentage widths as class names.
+The math ensures the opacity animation finishes at the exact same time as the fall — so particles don't linger invisible or disappear early.
+
+### What I Should Remember
+- `pointerEvents="none"` — the confetti is a visual layer only; the screen beneath stays interactive.
+- `useRef` for the particle array — ensures particles aren't recreated on re-renders.
+- `useNativeDriver: true` for all transforms and opacity — runs on the GPU, no JavaScript lag.
+- Delay window of 0–150ms creates a "burst" feel rather than a slow cascade.
+- Pastel colors are deliberate — warm and fun, not brand-colored.
+
+---
+
+## File: `components/ui/XPBar.tsx`
+
+### Purpose
+A reusable gold progress bar that shows a student's XP progress within their current level, with an animated fill on mount.
+
+### In Plain English
+The XP system gives 100 XP per level. This component takes the student's total `xp` and `level`, figures out how far they are through the current level, and draws a gold bar that animates from empty to the correct fill when it first appears. The left label shows total XP; the right label says "next level in N xp."
+
+The bar animates rather than appearing instantly because it makes the gamification feel alive — you see the progress you've earned, not just a static number.
+
+### How It Works
+1. The container View gets an `onLayout` callback that fires once, reporting the actual pixel width of the bar track.
+2. `useEffect` watches for that width. Once it arrives, `Animated.timing` animates `widthAnim` from 0 to `containerWidth × (progressPercent / 100)` pixels over 900ms.
+3. `useNativeDriver: false` is required because `width` is a layout property — only `transform` and `opacity` can use the native driver.
+
+### Key Code
+```tsx
+const widthAnim = useRef(new Animated.Value(0)).current;
+
+useEffect(() => {
+  if (containerWidth === 0) return;
+  Animated.timing(widthAnim, {
+    toValue:  containerWidth * (progressPercent / 100),
+    duration: 900,
+    delay:    150,
+    easing:   Easing.out(Easing.cubic),
+    useNativeDriver: false,
+  }).start();
+}, [containerWidth]);
+```
+The `onLayout` → `useEffect` pattern is the standard React Native way to animate to a percentage width — percentages alone can't be animated directly.
 
 ### What I Should Remember
 - `xp % 100` works because each level is exactly 100 XP wide.
-- The progress bar uses inline `style` for width — this is one of the few legitimate uses of `style` prop instead of `className`.
+- Percentage widths can't be animated — measure the container first, then animate in pixels.
+- `useNativeDriver: false` for width animations (layout properties can't run on the native thread).
 - `Math.min(..., 100)` prevents the bar from overflowing if XP gets ahead of the display.
 
 ---

@@ -4,6 +4,23 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-28 (continued)
+
+**What we did**
+Added personality and life to the UI: pastel confetti burst on hour submission, animated XP bar fill on profile load, floating "+N xp" indicator when new XP is detected, and a full copy rewrite across every screen. The app now speaks in a warm, personal tone instead of a clinical one.
+
+**Decisions made**
+- Confetti uses pastel colors (pink, yellow, blue, peach, mint, lavender) instead of brand green/gold. Reason: brand-colored confetti feels like a UI element; pastel confetti feels like a real celebration.
+- The +XP float only appears when the dashboard detects a genuine XP increase (fresh profile XP > cached XP). It doesn't show on every load — only when something real happened.
+- Copy is consistently lowercase and conversational: "hey, emerson!", "you're in!", "waiting on your org", "nice work!", "keep growing". This is a deliberate product voice decision, not just stylistic preference.
+- Encouraging messages on the success screen ("the community thanks you.", "you showed up!", etc.) rotate randomly so repeat users don't see the same phrase every time.
+- Frog mascot idea noted for later — placeholder leaf icon approach deferred until a real illustration exists.
+
+**Next steps**
+MVP feature set is complete. Deciding between: (1) streak tracking backend to give the streak placeholder a real number, or (2) beginning Phase 2 (verified service records / PDF export).
+
+---
+
 ## 2026-07-28
 
 **What we did**
