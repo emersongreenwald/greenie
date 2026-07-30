@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { HourLog } from '../types/hours';
+import type { HourLog, ServiceRecord } from '../types/hours';
 
 export async function logHours(
   opportunityId: string,
@@ -29,6 +29,17 @@ export async function getStudentHourLogs(studentId: string): Promise<HourLog[]> 
     .select('*, opportunities(title, hours_value)')
     .eq('student_id', studentId)
     .order('submitted_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getStudentServiceRecord(studentId: string): Promise<ServiceRecord[]> {
+  const { data, error } = await supabase
+    .from('hour_logs')
+    .select('id, hours_logged, actual_date, service_description, verified_at, opportunities(title, location, profiles(full_name))')
+    .eq('student_id', studentId)
+    .eq('status', 'verified')
+    .order('actual_date', { ascending: false });
   if (error) throw error;
   return data ?? [];
 }

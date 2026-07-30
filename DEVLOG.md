@@ -4,6 +4,26 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-29 (continued)
+
+**What we did**
+Built the student service record screen — a formal, document-like view of a student's verified community service, designed for college applications and eventual PDF export.
+
+**Decisions made**
+- White background (not cream), no XP/levels/streaks/confetti — deliberately different visual register from the rest of the app to signal this is an official document.
+- "greenie" wordmark (small, ExtraBold, brand green) is the only branded element. Every other color is neutral charcoal, muted sage, or warm gray.
+- Three-stat summary row (verified hours / organizations / completed) uses `#e0d9d0` border dividers — the same weight used throughout the document for horizontal rules.
+- Org name renders in brand green inside each entry — the only accent color in the log, connecting a specific entry to its verifying organization.
+- Student description quoted in italics below each entry. Provides voice and specificity that a college counselor can't get from a plain list.
+- Date formatted as "July 29, 2026" (not ISO) for document readability. `actual_date + 'T12:00:00'` prevents timezone boundary bugs.
+- Footer "verified by greenie · greenie.app" matches the visual language of an official document seal.
+- Dashboard entry point is a card-style row with "service record / official log of your verified hours" and a document icon — understated, not a primary action.
+
+**Next steps**
+Consider: (1) org signup roster (who signed up for each opportunity), (2) school student detail view, (3) PDF/share export for the service record.
+
+---
+
 ## 2026-07-29
 
 **What we did**

@@ -1,3 +1,18 @@
+export interface ServiceRecord {
+  id: string;
+  hours_logged: number;
+  actual_date: string;
+  service_description: string | null;
+  verified_at: string | null;
+  opportunities?: {
+    title: string;
+    location: string;
+    profiles?: {
+      full_name: string;
+    };
+  };
+}
+
 export interface HourLog {
   id: string;
   opportunity_id: string;

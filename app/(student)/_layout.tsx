@@ -45,6 +45,7 @@ export default function StudentLayout() {
       />
       <Tabs.Screen name="opportunity/[id]" options={{ href: null }} />
       <Tabs.Screen name="log-hours/[opportunityId]" options={{ href: null }} />
+      <Tabs.Screen name="service-record" options={{ href: null }} />
     </Tabs>
   );
 }

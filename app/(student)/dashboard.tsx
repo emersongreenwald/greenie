@@ -179,6 +179,23 @@ export default function StudentDashboard() {
         </View>
       </View>
 
+      {/* Service record link */}
+      <TouchableOpacity
+        className="mx-6 mb-6 bg-white rounded-2xl px-5 py-4 flex-row items-center justify-between"
+        style={shadows.card}
+        onPress={() => router.push('/(student)/service-record')}
+      >
+        <View>
+          <Text style={{ fontFamily: fonts.semibold }} className="text-[13px] text-charcoal">
+            service record
+          </Text>
+          <Text style={{ fontFamily: fonts.regular }} className="text-xs text-[#7e9488] mt-0.5">
+            official log of your verified hours
+          </Text>
+        </View>
+        <Ionicons name="document-text-outline" size={18} color={colors.text.muted} />
+      </TouchableOpacity>
+
       {/* Opportunities */}
       {opportunities.length > 0 ? (
         <>
