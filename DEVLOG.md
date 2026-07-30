@@ -4,6 +4,23 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-29 (continued x2)
+
+**What we did**
+Built the org signup roster — orgs can now tap "view sign-up roster" on any opportunity card to see every student who signed up, with their name, school, and the date they joined.
+
+**Decisions made**
+- Roster navigates to `app/(org)/opportunity-signups/[opportunityId].tsx` with the opportunity title passed as a query param (avoids a second fetch just to show the header).
+- Students are listed in sign-up order (ascending) with a position number — gives the org a sense of who committed earliest.
+- Each row shows name + school + "joined [date]". Kept simple: the verification screen already handles hours status, so the roster's job is just "who is coming?"
+- The count badge at the top ("N students signed up") gives the org an at-a-glance answer without having to count the list.
+- Added `SignupEntry` interface to `types/opportunity.ts` (separate from `OpportunitySignup`) to represent the join query result that includes the student profile data.
+
+**Next steps**
+Consider: (1) school student detail view (tap a student in the school dashboard → see their individual logs), (2) org edit opportunity, (3) service record PDF/share export.
+
+---
+
 ## 2026-07-29 (continued)
 
 **What we did**

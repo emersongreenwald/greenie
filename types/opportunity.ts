@@ -16,3 +16,12 @@ export interface OpportunitySignup {
   student_id: string;
   signed_up_at: string;
 }
+
+export interface SignupEntry {
+  student_id: string;
+  signed_up_at: string;
+  profiles?: {
+    full_name: string;
+    school_name: string | null;
+  };
+}

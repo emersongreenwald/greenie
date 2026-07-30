@@ -1025,10 +1025,28 @@ profiles?: {
 ```
 The `?` makes these optional — they're not always present. `getStudentHourLogs` fetches opportunity data; `getOrgPendingLogs` fetches both opportunity AND student profile data. The same type handles both query shapes.
 
+The file also exports `ServiceRecord` — a separate interface for the three-level join used by the service record screen:
+```ts
+export interface ServiceRecord {
+  id: string;
+  hours_logged: number;
+  actual_date: string;
+  service_description: string | null;
+  verified_at: string | null;
+  opportunities?: {
+    title: string;
+    location: string;
+    profiles?: { full_name: string }; // org's profile via org_id FK
+  };
+}
+```
+`HourLog.profiles` is the student's profile (via `student_id`). `ServiceRecord.opportunities.profiles` is the org's profile (via `org_id`). Same field name, different FK chain — easy to confuse.
+
 ### What I Should Remember
 - `HourLog.actual_date` is a string like `"2026-07-20"` (a date, not a timestamp).
 - `HourLog.hours_logged` may come from Postgres as a string in some edge cases — always wrap with `Number(log.hours_logged)` before math.
-- `profiles?` in this type refers to the *student's* profile (via the `student_id` FK) — not the org's profile.
+- `HourLog.profiles?` refers to the *student's* profile (via `student_id` FK).
+- `ServiceRecord.opportunities?.profiles?` refers to the *org's* profile (via `org_id` FK on opportunities).
 
 ---
 
@@ -1061,9 +1079,24 @@ export async function verifyHourLog(logId: string): Promise<void> {
 ```
 The client just updates two columns. The Postgres trigger (`trigger_award_xp`) detects this status change and awards XP automatically. The client never knows or sends XP — the database handles it.
 
+```ts
+export async function getStudentServiceRecord(studentId: string): Promise<ServiceRecord[]> {
+  const { data, error } = await supabase
+    .from('hour_logs')
+    .select('id, hours_logged, actual_date, service_description, verified_at, opportunities(title, location, profiles(full_name))')
+    .eq('student_id', studentId)
+    .eq('status', 'verified')
+    .order('actual_date', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+```
+The three-level join (`hour_logs → opportunities → profiles`) gets the org's name. Supabase resolves it via the `org_id` FK on opportunities automatically — you just nest the select.
+
 ### What I Should Remember
 - XP is awarded by a Postgres trigger when `status` changes to `'verified'`. The service function just updates the status — it doesn't know about XP at all.
-- `getStudentHourLogs` joins opportunities (for the title). `getOrgPendingLogs` joins both opportunities AND the student's profile.
+- `getStudentHourLogs` joins opportunities (for title). `getOrgPendingLogs` joins both opportunities AND the student's profile.
+- `getStudentServiceRecord` uses a three-level join: `hour_logs → opportunities → profiles` (the org's profile, via `org_id`).
 - `!inner` in a Supabase select makes it an INNER JOIN — rows without a matching related record are excluded.
 - Filtering on a joined table uses dot notation: `.eq('opportunities.org_id', orgId)`.
 
@@ -1188,6 +1221,71 @@ Converts `"08/15/2026"` → `"2026-08-15"`. Returns `null` on malformed input so
 - `parseDate` converts mm/dd/yyyy → yyyy-mm-dd (what Postgres `date` columns expect).
 - The org's profile ID is the `org_id` — it comes from the auth store, not from user input.
 - `router.back()` on success returns to the opportunities list, which re-fetches on mount.
+
+---
+
+## File: `app/(org)/opportunity-signups/[opportunityId].tsx`
+
+### Purpose
+Shows an org the list of every student who signed up for a specific opportunity — name, school, and date they joined.
+
+### In Plain English
+Orgs post an opportunity, students swipe to join it, and now the org can see who's coming. This answers the practical question every event organizer has: "how many people actually signed up, and who are they?" The screen is accessible from each opportunity card in the org's opportunity list via a "view sign-up roster" link.
+
+Each student row shows: a position number (sign-up order), full name, school, and when they joined. The count badge at the top gives the total immediately so the org doesn't have to count.
+
+This is separate from the verification screen — the roster shows "who signed up," while the verifications screen shows "who submitted hours." One is pre-event, one is post-event.
+
+### Key Code
+```ts
+const { opportunityId, title } = useLocalSearchParams<{
+  opportunityId: string;
+  title: string;
+}>();
+```
+`title` is passed as a query param by the opportunities list when navigating here. This avoids an extra database fetch just to display the opportunity name in the header.
+
+### What I Should Remember
+- The route is a dynamic segment inside a nested folder: `app/(org)/opportunity-signups/[opportunityId].tsx`.
+- `title` is a query param, not a route segment — passed by the parent screen.
+- Students are ordered by `signed_up_at` ascending (earliest signup first) — gives context about early commitment.
+- `getOpportunitySignups` queries `opportunity_signups` and joins `profiles(full_name, school_name)` for each student.
+
+---
+
+## File: `app/(student)/service-record.tsx`
+
+### Purpose
+A formal, document-style view of a student's entire verified service history — designed for college applications and eventual PDF export.
+
+### In Plain English
+This screen intentionally feels different from the rest of the app. No XP, levels, streaks, or gamification — just accurate, verifiable information in a clean layout that a counselor or admissions officer could read at a glance. Think of it like a LinkedIn profile or Apple Wallet card: professional, clean, designed to be shared.
+
+The screen has four sections: a document header (student name + school), a three-stat summary row (hours / organizations / entries), a chronological service log, and a footer that reads "verified by greenie · greenie.app."
+
+The student's description of their service is displayed in italics and quotes directly under each entry — this gives context that a plain list of hours can't. The org name appears in brand green, the only accent color in an otherwise neutral palette.
+
+### Key Code
+```ts
+const totalHours = records.reduce((sum, r) => sum + Number(r.hours_logged), 0);
+const uniqueOrgs = new Set(
+  records.map((r) => r.opportunities?.profiles?.full_name).filter(Boolean)
+).size;
+```
+Three-level join: `hour_logs → opportunities → profiles` (the org's profile, via the `org_id` FK on opportunities). This is why `getStudentServiceRecord` has that three-level `.select()` — Supabase resolves the join chain automatically.
+
+```ts
+const date = new Date(record.actual_date + 'T12:00:00').toLocaleDateString('en-US', {
+  month: 'long', day: 'numeric', year: 'numeric',
+});
+```
+`actual_date + 'T12:00:00'` prevents the timezone boundary bug — a date-only string parsed at midnight can roll back a day in US timezones. Noon never crosses a day boundary.
+
+### What I Should Remember
+- This screen is hidden from the tab bar (`href: null` in `_layout.tsx`) and navigated to from a card in the student dashboard.
+- It uses a white background (not cream) to signal "document", not "app".
+- Three-level join: `hour_logs → opportunities → profiles` — same join chain used in `getStudentServiceRecord`.
+- The screen is designed so the layout would map cleanly to a PDF — every section is a distinct block with consistent spacing. PDF export is Phase 3.
 
 ---
 

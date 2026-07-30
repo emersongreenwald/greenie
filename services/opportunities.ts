@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Opportunity } from '../types/opportunity';
+import type { Opportunity, SignupEntry } from '../types/opportunity';
 
 export async function getOpportunities(): Promise<Opportunity[]> {
   const { data, error } = await supabase
@@ -59,6 +59,16 @@ export async function deleteOpportunity(id: string): Promise<void> {
     .delete()
     .eq('id', id);
   if (error) throw error;
+}
+
+export async function getOpportunitySignups(opportunityId: string): Promise<SignupEntry[]> {
+  const { data, error } = await supabase
+    .from('opportunity_signups')
+    .select('student_id, signed_up_at, profiles(full_name, school_name)')
+    .eq('opportunity_id', opportunityId)
+    .order('signed_up_at', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getStudentSignups(studentId: string): Promise<string[]> {

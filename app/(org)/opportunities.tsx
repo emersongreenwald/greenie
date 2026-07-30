@@ -141,6 +141,21 @@ export default function OrgOpportunities() {
                     {opp.location}
                   </Text>
                 </View>
+
+                <TouchableOpacity
+                  className="mt-4 flex-row items-center justify-between border-t border-[#e0d9d0] pt-3"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(org)/opportunity-signups/[opportunityId]',
+                      params: { opportunityId: opp.id, title: opp.title },
+                    })
+                  }
+                >
+                  <Text style={{ fontFamily: fonts.medium }} className="text-brand text-sm">
+                    view sign-up roster
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color={colors.brand.default} />
+                </TouchableOpacity>
               </View>
             );
           })}
