@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getOpportunitySignups } from '../../../services/opportunities';
+import { getOpportunitySignups, cancelSignup } from '../../../services/opportunities';
 import { colors, fonts, shadows } from '../../../constants/theme';
 import type { SignupEntry } from '../../../types/opportunity';
 
@@ -15,6 +15,7 @@ export default function OpportunitySignups() {
 
   const [signups, setSignups] = useState<SignupEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -24,6 +25,31 @@ export default function OpportunitySignups() {
     }
     load().catch(console.error);
   }, []);
+
+  function handleRemove(studentId: string, studentName: string) {
+    Alert.alert(
+      'remove student',
+      `remove ${studentName} from the roster for "${title}"?`,
+      [
+        { text: 'cancel', style: 'cancel' },
+        {
+          text: 'remove',
+          style: 'destructive',
+          onPress: async () => {
+            setRemovingId(studentId);
+            try {
+              await cancelSignup(opportunityId, studentId);
+              setSignups((prev) => prev.filter((s) => s.student_id !== studentId));
+            } catch (e) {
+              console.error(e);
+            } finally {
+              setRemovingId(null);
+            }
+          },
+        },
+      ]
+    );
+  }
 
   if (loading) {
     return (
@@ -97,6 +123,16 @@ export default function OpportunitySignups() {
                       : `joined ${signedUpDate}`}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  onPress={() =>
+                    handleRemove(signup.student_id, signup.profiles?.full_name ?? 'this student')
+                  }
+                  disabled={removingId === signup.student_id}
+                  style={{ opacity: removingId === signup.student_id ? 0.4 : 1 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="person-remove-outline" size={16} color={colors.error} />
+                </TouchableOpacity>
               </View>
             );
           })}

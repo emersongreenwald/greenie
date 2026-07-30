@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Animated, Easing } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Animated, Easing, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut, getProfile } from '../../services/auth';
 import { getSignedUpOpportunities } from '../../services/opportunities';
 import { getStudentHourLogs } from '../../services/hours';
+import { cancelSignup } from '../../services/opportunities';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { XPBar } from '../../components/ui/XPBar';
 import { Button } from '../../components/ui/Button';
@@ -20,6 +21,7 @@ export default function StudentDashboard() {
   const [logMap, setLogMap] = useState<Record<string, HourLog>>({});
   const [loading, setLoading] = useState(true);
   const [xpGain, setXpGain] = useState(0);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const xpFloatY       = useRef(new Animated.Value(0)).current;
   const xpFloatOpacity = useRef(new Animated.Value(0)).current;
@@ -68,6 +70,31 @@ export default function StudentDashboard() {
     }
     load().catch(console.error);
   }, []);
+
+  function handleCancelSignup(opportunityId: string, title: string) {
+    Alert.alert(
+      'cancel sign-up',
+      `remove yourself from "${title}"?`,
+      [
+        { text: 'keep it', style: 'cancel' },
+        {
+          text: 'cancel sign-up',
+          style: 'destructive',
+          onPress: async () => {
+            setCancellingId(opportunityId);
+            try {
+              await cancelSignup(opportunityId, profile!.id);
+              setOpportunities((prev) => prev.filter((o) => o.id !== opportunityId));
+            } catch (e) {
+              console.error(e);
+            } finally {
+              setCancellingId(null);
+            }
+          },
+        },
+      ]
+    );
+  }
 
   async function handleSignOut() {
     await signOut();
@@ -215,24 +242,35 @@ export default function StudentDashboard() {
                   </Text>
 
                   {!log ? (
-                    <TouchableOpacity
-                      className="bg-brand rounded-xl py-3 flex-row items-center justify-center gap-2"
-                      onPress={() =>
-                        router.push({
-                          pathname: '/(student)/log-hours/[opportunityId]',
-                          params: {
-                            opportunityId: opp.id,
-                            title:         opp.title,
-                            hoursValue:    String(opp.hours_value),
-                          },
-                        })
-                      }
-                    >
-                      <Ionicons name="pencil-outline" size={13} color="white" />
-                      <Text style={{ fontFamily: fonts.semibold }} className="text-white text-[13px]">
-                        log hours
-                      </Text>
-                    </TouchableOpacity>
+                    <View className="gap-2">
+                      <TouchableOpacity
+                        className="bg-brand rounded-xl py-3 flex-row items-center justify-center gap-2"
+                        onPress={() =>
+                          router.push({
+                            pathname: '/(student)/log-hours/[opportunityId]',
+                            params: {
+                              opportunityId: opp.id,
+                              title:         opp.title,
+                              hoursValue:    String(opp.hours_value),
+                            },
+                          })
+                        }
+                      >
+                        <Ionicons name="pencil-outline" size={13} color="white" />
+                        <Text style={{ fontFamily: fonts.semibold }} className="text-white text-[13px]">
+                          log hours
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        className="items-center py-1"
+                        onPress={() => handleCancelSignup(opp.id, opp.title)}
+                        disabled={cancellingId === opp.id}
+                      >
+                        <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-xs">
+                          {cancellingId === opp.id ? 'cancelling…' : 'cancel sign-up'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   ) : log.status === 'pending' ? (
                     <View className="bg-amber-50 border border-amber-200 rounded-xl py-3 flex-row items-center justify-center gap-2">
                       <Ionicons name="time-outline" size={13} color="#b45309" />

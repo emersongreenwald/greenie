@@ -64,6 +64,14 @@ export default function OpportunityDetail() {
     day: 'numeric',
   });
 
+  const isFull =
+    opportunity.capacity != null &&
+    (opportunity.signup_count ?? 0) >= opportunity.capacity;
+  const spotsLeft =
+    opportunity.capacity != null
+      ? Math.max(0, opportunity.capacity - (opportunity.signup_count ?? 0))
+      : null;
+
   return (
     <ScrollView className="flex-1 bg-cream">
       <TouchableOpacity
@@ -97,6 +105,23 @@ export default function OpportunityDetail() {
               {opportunity.hours_value} {opportunity.hours_value === 1 ? 'hour' : 'hours'}
             </Text>
           </View>
+          {opportunity.capacity != null && (
+            <View className="flex-row items-center gap-2.5">
+              <Ionicons
+                name="people-outline"
+                size={15}
+                color={isFull ? colors.error : colors.text.muted}
+              />
+              <Text
+                style={{ fontFamily: fonts.semibold }}
+                className={isFull ? 'text-[#dc4f4f] text-sm' : 'text-[#4a5e54] text-sm'}
+              >
+                {isFull
+                  ? 'full · 0 spots left'
+                  : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`}
+              </Text>
+            </View>
+          )}
         </View>
 
         <Text style={{ fontFamily: fonts.regular }} className="text-[#4a5e54] leading-7 mb-8">
@@ -115,6 +140,15 @@ export default function OpportunityDetail() {
               <Ionicons name="checkmark-circle" size={16} color={colors.brand.dark} />
               <Text style={{ fontFamily: fonts.semibold }} className="text-brand-dark">you're in!</Text>
             </View>
+          </View>
+        ) : isFull ? (
+          <View className="bg-[#fdf2ee] border border-[#e8c5bb] rounded-2xl py-4 px-4 items-center mb-8 gap-1">
+            <Text style={{ fontFamily: fonts.semibold }} className="text-[#dc4f4f]">
+              full · sign-up closed
+            </Text>
+            <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488] text-xs">
+              all spots have been filled.
+            </Text>
           </View>
         ) : (
           <Button

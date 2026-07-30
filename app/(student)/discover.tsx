@@ -29,6 +29,11 @@ export default function Discover() {
   async function handleSwipeRight() {
     const opportunity = opportunities[currentIndex];
     if (!profile) return;
+    // Guard: SwipeCard prevents swipe-right on full cards, but be safe
+    const isFull =
+      opportunity.capacity != null &&
+      (opportunity.signup_count ?? 0) >= opportunity.capacity;
+    if (isFull) return;
     try {
       await signUpForOpportunity(opportunity.id, profile.id);
     } catch {
@@ -85,6 +90,10 @@ export default function Discover() {
           onSwipeLeft={handleSwipeLeft}
           onSwipeRight={handleSwipeRight}
           onTap={handleTap}
+          isFull={
+            opportunities[currentIndex].capacity != null &&
+            (opportunities[currentIndex].signup_count ?? 0) >= opportunities[currentIndex].capacity!
+          }
         >
           <OpportunityCard opportunity={opportunities[currentIndex]} />
         </SwipeCard>

@@ -11,12 +11,18 @@ interface SwipeCardProps {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onTap: () => void;
+  isFull?: boolean;
 }
 
-export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap }: SwipeCardProps) {
+export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap, isFull = false }: SwipeCardProps) {
   const position = useRef(new Animated.ValueXY()).current;
   const tapStartX = useRef(0);
   const tapStartY = useRef(0);
+  const fullMessageOpacity = useRef(new Animated.Value(0)).current;
+
+  // Mutable ref so the panResponder closure always reads the current prop value
+  const isFullRef = useRef(isFull);
+  isFullRef.current = isFull;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -35,7 +41,16 @@ export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap }: SwipeC
           return;
         }
         if (gesture.dx > SWIPE_THRESHOLD) {
-          swipeOut('right');
+          if (isFullRef.current) {
+            resetPosition();
+            Animated.sequence([
+              Animated.timing(fullMessageOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+              Animated.delay(1200),
+              Animated.timing(fullMessageOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+            ]).start();
+          } else {
+            swipeOut('right');
+          }
         } else if (gesture.dx < -SWIPE_THRESHOLD) {
           swipeOut('left');
         } else {
@@ -93,24 +108,30 @@ export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap }: SwipeC
       {...panResponder.panHandlers}
     >
       {children}
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          opacity: joinOpacity,
-          transform: [{ rotate: '-12deg' }],
-          borderWidth: 2.5,
-          borderColor: colors.brand.default,
-          borderRadius: 8,
-          paddingHorizontal: 12,
-          paddingVertical: 5,
-        }}
-      >
-        <Text style={{ fontFamily: fonts.extrabold, fontSize: 16, color: colors.brand.default }}>
-          join
-        </Text>
-      </Animated.View>
+
+      {/* Join badge — suppressed when full */}
+      {!isFull && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            opacity: joinOpacity,
+            transform: [{ rotate: '-12deg' }],
+            borderWidth: 2.5,
+            borderColor: colors.brand.default,
+            borderRadius: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 5,
+          }}
+        >
+          <Text style={{ fontFamily: fonts.extrabold, fontSize: 16, color: colors.brand.default }}>
+            join
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Skip badge */}
       <Animated.View
         style={{
           position: 'absolute',
@@ -127,6 +148,26 @@ export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap }: SwipeC
       >
         <Text style={{ fontFamily: fonts.extrabold, fontSize: 16, color: '#a09488' }}>
           skip
+        </Text>
+      </Animated.View>
+
+      {/* "Full" message — fades in and out when user tries to swipe right on a full card */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          opacity: fullMessageOpacity,
+          transform: [{ rotate: '-12deg' }],
+          borderWidth: 2.5,
+          borderColor: colors.error,
+          borderRadius: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 5,
+        }}
+      >
+        <Text style={{ fontFamily: fonts.extrabold, fontSize: 16, color: colors.error }}>
+          full
         </Text>
       </Animated.View>
     </Animated.View>

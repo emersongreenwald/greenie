@@ -25,6 +25,7 @@ export default function CreateOpportunity() {
   const [location, setLocation] = useState('');
   const [date, setDate] = useState('');
   const [hours, setHours] = useState('');
+  const [capacity, setCapacity] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,6 +50,15 @@ export default function CreateOpportunity() {
       return;
     }
 
+    let capacityNum: number | null = null;
+    if (capacity.trim()) {
+      capacityNum = parseInt(capacity.trim(), 10);
+      if (isNaN(capacityNum) || capacityNum <= 0) {
+        setError('max volunteers must be a positive whole number.');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       await createOpportunity(profile.id, {
@@ -57,6 +67,7 @@ export default function CreateOpportunity() {
         location: location.trim(),
         date: parsedDate,
         hours_value: hoursNum,
+        capacity: capacityNum,
       });
       router.back();
     } catch (e) {
@@ -140,6 +151,17 @@ export default function CreateOpportunity() {
             />
           </View>
         </View>
+
+        <Text style={{ fontFamily: fonts.semibold }} className="text-xs text-charcoal mb-1.5">
+          max volunteers{' '}
+          <Text style={{ fontFamily: fonts.regular }} className="text-[#7e9488]">(optional)</Text>
+        </Text>
+        <Input
+          placeholder="leave blank for unlimited"
+          value={capacity}
+          onChangeText={setCapacity}
+          keyboardType="number-pad"
+        />
 
         {error ? (
           <Text style={{ fontFamily: fonts.regular }} className="text-[#dc4f4f] text-sm mb-4">

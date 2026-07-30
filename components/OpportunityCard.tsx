@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { fonts, shadows } from '../constants/theme';
+import { colors, fonts, shadows } from '../constants/theme';
 import type { Opportunity } from '../types/opportunity';
 
 interface OpportunityCardProps {
@@ -13,6 +13,14 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
     month: 'long',
     day: 'numeric',
   });
+
+  const isFull =
+    opportunity.capacity != null &&
+    (opportunity.signup_count ?? 0) >= opportunity.capacity;
+  const spotsLeft =
+    opportunity.capacity != null
+      ? Math.max(0, opportunity.capacity - (opportunity.signup_count ?? 0))
+      : null;
 
   return (
     <View className="bg-white rounded-3xl p-6 w-80" style={shadows.card}>
@@ -40,6 +48,23 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
             {opportunity.hours_value} {opportunity.hours_value === 1 ? 'hour' : 'hours'}
           </Text>
         </View>
+        {opportunity.capacity != null && (
+          <View className="flex-row items-center gap-2">
+            <Ionicons
+              name="people-outline"
+              size={13}
+              color={isFull ? colors.error : '#7e9488'}
+            />
+            <Text
+              style={{ fontFamily: fonts.semibold }}
+              className={isFull ? 'text-[#dc4f4f] text-sm' : 'text-[#7e9488] text-sm'}
+            >
+              {isFull
+                ? 'full'
+                : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );

@@ -4,6 +4,25 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-29 (continued x3)
+
+**What we did**
+Three interconnected features: RLS enforcement for opportunity_signups, optional capacity limits on opportunities, and signup cancellation for both students and orgs.
+
+**Decisions made**
+- RLS on `opportunity_signups` is now enforced at the database level, not just routing. Students can read/insert/delete their own rows; orgs can read/delete rows for their own opportunities; no other access. This means even a direct API call with the anon key can't leak other students' signup data.
+- Capacity is nullable (`INT NULL`). Null means unlimited — no capacity badge shown at all. Only capacity-limited opportunities show the "X spots left" or "full" chip.
+- Signup counts for capacity-limited opportunities are fetched in a single second query (fetch all signup rows for capped IDs, count in JS). Not N+1 — two queries total regardless of how many capped opportunities exist.
+- A mutable ref (`isFullRef`) solves the stale closure problem in SwipeCard's `PanResponder`. Since `panResponder` is created once in `useRef`, the `isFull` prop would be stale inside the callback if read directly. Assigning `isFullRef.current = isFull` on every render keeps the ref current without recreating the panResponder.
+- "Full" swipe is communicated with the same badge style as "join" (same position, same border treatment) but in red (`#dc4f4f`). Fades in for ~1.4 seconds then fades out. The "join" badge is suppressed entirely when `isFull` so there's no conflicting signal.
+- Student cancellation is only available when no hour log exists for that opportunity. Once hours are submitted (pending or verified), the cancel option disappears — the student has committed. Both student cancel and org remove call the same `cancelSignup()` service function; RLS handles the authorization difference.
+- Waitlists and edit-opportunity are on the long-term roadmap.
+
+**Next steps**
+School student detail view (tap a student in the school dashboard → see their individual logs), then org edit opportunity.
+
+---
+
 ## 2026-07-29 (continued x2)
 
 **What we did**
