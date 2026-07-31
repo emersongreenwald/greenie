@@ -45,9 +45,8 @@ Student service record screen (formal document layout, designed for college apps
 
 These are small, well-scoped tasks. Neither is blocking a pitch, but both will be visible gaps in a live demo.
 
-### 🔲 School Student Detail View
-**Size: Small (1 screen)**
-In the school dashboard, tapping a student currently does nothing. A counselor demoing the app will tap and expect to see the student's individual verified logs. Needs a new screen: student name + school info at the top, list of their verified hour entries below.
+### ✅ School Student Detail View
+Tapping a student in the school dashboard opens their full service log alongside verified hours, level, and streak. Reuses existing service functions — no new database queries needed.
 
 ### 🔲 Org Edit Opportunity
 **Size: Small (1 screen)**

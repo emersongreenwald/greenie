@@ -4,6 +4,23 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-07-30
+
+**What we did**
+Added school student detail view — the last visible gap in the school demo flow. School admins can now tap any student in the dashboard to see their full service log alongside their level, streak, and verified hours.
+
+**Decisions made**
+- Reused `getStudentServiceRecord(studentId)` directly — the existing RLS on `hour_logs` already allows authenticated users to read verified logs, confirmed by the school dashboard already reading them.
+- Stats row shows verified hours, level, and week streak — counselors care about engagement (level/streak) as much as total hours, so all three are surfaced at the top.
+- Log entries are grouped in a single white card with internal dividers rather than individual cards per entry. Feels more like reading a document than a list.
+- Chevron added to each student row in the dashboard to make it obvious the rows are tappable.
+- No new service functions — reused `getProfile` and `getStudentServiceRecord` from existing services.
+
+**Next steps**
+Core pitch-ready feature set is now complete. Consider: (1) org edit opportunity, (2) service record PDF export, (3) first real demo with a Hamptons org or school.
+
+---
+
 ## 2026-07-29 (continued x3)
 
 **What we did**

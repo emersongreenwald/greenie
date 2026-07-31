@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from '../../services/auth';
 import { getSchoolStudents } from '../../services/school';
@@ -91,7 +91,17 @@ export default function SchoolDashboard() {
                 students · sorted by hours
               </Text>
               {students.map((student, index) => (
-                <View key={student.id} className="bg-white rounded-2xl p-4" style={shadows.card}>
+                <TouchableOpacity
+                  key={student.id}
+                  className="bg-white rounded-2xl p-4"
+                  style={shadows.card}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(school)/student-detail/[studentId]',
+                      params: { studentId: student.id },
+                    })
+                  }
+                >
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3 flex-1">
                       <Text style={{ fontFamily: fonts.bold }} className="text-[#7e9488] text-sm w-6 text-right">
@@ -101,19 +111,22 @@ export default function SchoolDashboard() {
                         {student.full_name}
                       </Text>
                     </View>
-                    <View className="items-end">
-                      <View className="flex-row items-center gap-1">
-                        <Ionicons name="time-outline" size={13} color={colors.gold.default} />
-                        <Text style={{ fontFamily: fonts.bold }} className="text-gold text-sm">
-                          {student.verified_hours.toFixed(1)}h
+                    <View className="flex-row items-center gap-3">
+                      <View className="items-end">
+                        <View className="flex-row items-center gap-1">
+                          <Ionicons name="time-outline" size={13} color={colors.gold.default} />
+                          <Text style={{ fontFamily: fonts.bold }} className="text-gold text-sm">
+                            {student.verified_hours.toFixed(1)}h
+                          </Text>
+                        </View>
+                        <Text style={{ fontFamily: fonts.regular }} className="text-[10px] text-[#7e9488] mt-0.5">
+                          level {student.level}
                         </Text>
                       </View>
-                      <Text style={{ fontFamily: fonts.regular }} className="text-[10px] text-[#7e9488] mt-0.5">
-                        level {student.level}
-                      </Text>
+                      <Ionicons name="chevron-forward" size={14} color={colors.text.muted} />
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
