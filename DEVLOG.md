@@ -4,6 +4,23 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-08-04
+
+**What we did**
+Added org edit opportunity — orgs can now edit any of their posted opportunities in place rather than having to delete and repost.
+
+**Decisions made**
+- Existing field values are passed as route params from the opportunities list to the edit screen, avoiding an extra database fetch just to populate a form.
+- Date is converted from `yyyy-mm-dd` (database format) to `mm/dd/yyyy` (form display format) in the list screen before passing, so the edit screen uses exactly the same `parseDate` helper as the create screen — no new parsing logic.
+- The opportunities list now uses `useFocusEffect` instead of `useEffect` so it automatically re-fetches when navigating back from edit or create. Previously the list only fetched once on mount, meaning a fresh edit wouldn't appear without fully unmounting the screen.
+- Added an UPDATE RLS policy to the `opportunities` table — insert and delete policies were already in place but update was missing.
+- Edit and delete icons sit side by side in the card header. Pencil is muted grey; trash stays red. Visual weight difference makes it harder to accidentally tap delete when you meant to edit.
+
+**Next steps**
+All pre-pitch features are now complete. Next: first real-world demo with a Hamptons org or school, then service record PDF export.
+
+---
+
 ## 2026-07-30
 
 **What we did**

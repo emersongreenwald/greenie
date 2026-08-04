@@ -76,6 +76,24 @@ export async function createOpportunity(
   if (error) throw error;
 }
 
+export async function updateOpportunity(
+  id: string,
+  fields: {
+    title: string;
+    description: string;
+    location: string;
+    date: string;
+    hours_value: number;
+    capacity?: number | null;
+  }
+): Promise<void> {
+  const { error } = await supabase
+    .from('opportunities')
+    .update(fields)
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function deleteOpportunity(id: string): Promise<void> {
   const { error } = await supabase
     .from('opportunities')

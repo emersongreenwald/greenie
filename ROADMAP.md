@@ -48,9 +48,8 @@ These are small, well-scoped tasks. Neither is blocking a pitch, but both will b
 ### ✅ School Student Detail View
 Tapping a student in the school dashboard opens their full service log alongside verified hours, level, and streak. Reuses existing service functions — no new database queries needed.
 
-### 🔲 Org Edit Opportunity
-**Size: Small (1 screen)**
-Orgs can post and delete but not edit. If they make a typo or need to update a date, they have to delete and repost. A straightforward form pre-populated with existing values.
+### ✅ Org Edit Opportunity
+Pre-populated form at `/(org)/edit-opportunity/[id]`. Existing values passed as route params from the list screen. Opportunities list now uses `useFocusEffect` so it refreshes on return from both edit and create.
 
 ---
 

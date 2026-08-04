@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getOrgOpportunities, deleteOpportunity } from '../../services/opportunities';
 import { useAuthStore } from '../../stores/useAuthStore';
@@ -14,9 +14,11 @@ export default function OrgOpportunities() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    load().catch(console.error);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      load().catch(console.error);
+    }, [])
+  );
 
   async function load() {
     if (!profile) return;
@@ -104,20 +106,44 @@ export default function OrgOpportunities() {
               year: 'numeric',
             });
             const isDeleting = deletingId === opp.id;
+            // Convert yyyy-mm-dd → mm/dd/yyyy for the edit form
+            const [y, m, d] = opp.date.split('-');
+            const dateForInput = `${m}/${d}/${y}`;
             return (
               <View key={opp.id} className="bg-white rounded-2xl p-5" style={shadows.card}>
                 <View className="flex-row items-start justify-between gap-3">
                   <Text style={{ fontFamily: fonts.semibold }} className="text-[15px] text-charcoal flex-1">
                     {opp.title}
                   </Text>
-                  <TouchableOpacity
-                    onPress={() => handleDelete(opp.id)}
-                    disabled={isDeleting}
-                    style={{ opacity: isDeleting ? 0.4 : 1 }}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={colors.error} />
-                  </TouchableOpacity>
+                  <View className="flex-row items-center gap-3">
+                    <TouchableOpacity
+                      onPress={() =>
+                        router.push({
+                          pathname: '/(org)/edit-opportunity/[id]',
+                          params: {
+                            id: opp.id,
+                            title: opp.title,
+                            description: opp.description,
+                            location: opp.location,
+                            date: dateForInput,
+                            hours: String(opp.hours_value),
+                            capacity: opp.capacity != null ? String(opp.capacity) : '',
+                          },
+                        })
+                      }
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="pencil-outline" size={16} color={colors.text.muted} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDelete(opp.id)}
+                      disabled={isDeleting}
+                      style={{ opacity: isDeleting ? 0.4 : 1 }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 <View className="flex-row items-center gap-4 mt-2">
