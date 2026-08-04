@@ -1001,6 +1001,7 @@ Organizations have one primary job in Greenie: verify that students actually com
 - Two stat cards: pending verifications (→ verifications screen) and posted opportunities (→ opportunities management screen).
 - Both counts are fetched in parallel with `Promise.all` on mount.
 - Sign-out follows the same three-step pattern: call `signOut()`, clear the store, navigate to sign-in.
+- `useFocusEffect` vs `useEffect`: the opportunities list screen uses `useFocusEffect` so it re-fetches when returning from the edit or create screens. `useEffect([], [])` only runs once on mount — it would show stale data after an edit.
 
 ---
 
@@ -1316,4 +1317,65 @@ Alert.alert(
 - Orgs see all their own opportunities here, including unverified ones (so they can confirm posts went through).
 - `deletingId` is a single ID (not boolean) so only the tapped card shows loading state.
 - After deletion, local state is filtered immediately (optimistic update) — same pattern as verifications.
-- The list does not auto-refresh after returning from create — `useEffect` re-runs on mount, so navigating back from the create screen triggers a fresh fetch.
+- The list uses `useFocusEffect` (not `useEffect`) so it re-fetches every time the screen comes into focus — this means returning from edit or create always shows fresh data.
+- Each card has a pencil (edit, muted grey) and trash (delete, red) icon. Different colors make it harder to accidentally tap delete when you meant to edit.
+
+---
+
+## File: `app/(org)/edit-opportunity/[id].tsx`
+
+### Purpose
+A pre-populated form that lets an org update any of their posted opportunities.
+
+### In Plain English
+Same fields as the create form (title, description, location, date, hours, max volunteers), but pre-filled with the existing values. The org can change anything and save. Changes are visible to students immediately.
+
+The key insight here is that the existing values are passed as route params from the opportunities list — we don't make an extra database fetch just to populate a form we already have the data for. The date needs a format conversion: it's stored as `yyyy-mm-dd` in the database but the form shows `mm/dd/yyyy`, so the list screen converts it before passing it along.
+
+### Key Code
+```ts
+// In opportunities.tsx — convert before navigating
+const [y, m, d] = opp.date.split('-');
+const dateForInput = `${m}/${d}/${y}`;
+
+router.push({
+  pathname: '/(org)/edit-opportunity/[id]',
+  params: { id: opp.id, title: opp.title, date: dateForInput, ... },
+});
+```
+The edit screen receives `mm/dd/yyyy` and uses the same `parseDate()` helper as the create screen to convert back before saving. No new parsing logic needed.
+
+### What I Should Remember
+- Values come from route params, not a fresh fetch — avoids a redundant database call.
+- Date must be converted `yyyy-mm-dd` → `mm/dd/yyyy` before passing as a param, and converted back on save.
+- `capacity` is passed as a string (`"10"` or `""` for unlimited) since route params are always strings.
+- On success, `router.back()` returns to the list, which re-fetches via `useFocusEffect`.
+- Requires an UPDATE RLS policy on `opportunities`: `USING (auth.uid() = org_id) WITH CHECK (auth.uid() = org_id)`.
+
+---
+
+## File: `app/(school)/student-detail/[studentId].tsx`
+
+### Purpose
+Shows a school admin the full service record of an individual student — verified hours, level, streak, and a chronological log of every completed service entry.
+
+### In Plain English
+When a counselor taps a student row in the school dashboard, this screen opens. It answers two questions at once: how engaged is this student on the platform (level, streak), and what did they actually do (the service log). The service log uses the same entry format as the student's own service record — org name in brand green, date, hours, description in italics.
+
+The counselor is looking at someone else's data, but the service functions don't care — `getProfile` and `getStudentServiceRecord` both accept any student ID and return that student's data. RLS on `hour_logs` allows authenticated users to read verified logs, which is confirmed by the school dashboard already reading them for aggregate counts.
+
+### Key Code
+```ts
+const [profile, serviceRecords] = await Promise.all([
+  getProfile(studentId),
+  getStudentServiceRecord(studentId),
+]);
+```
+Two parallel fetches on mount — profile for the header stats, service records for the log. `Promise.all` runs them simultaneously so the screen loads in one round trip.
+
+### What I Should Remember
+- `studentId` comes from the route segment — passed by the school dashboard when navigating.
+- Reuses `getProfile` and `getStudentServiceRecord` — no new service functions.
+- Stats row shows verified hours, level, and week streak — counselors care about platform engagement, not just total hours.
+- Log entries are grouped in one white card with internal dividers, not individual cards per entry — feels more like reading a document.
+- The school dashboard student rows were updated from `View` to `TouchableOpacity` with a chevron to signal they're tappable.
