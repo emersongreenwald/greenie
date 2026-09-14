@@ -69,7 +69,7 @@ function buildHTML(profile: Profile, records: ServiceRecord[]): string {
     border-bottom: 1px solid #e0d9d0;
   }
   .wordmark {
-    color: #557A62;
+    color: #2e4d38;
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.5px;
@@ -132,7 +132,7 @@ function buildHTML(profile: Profile, records: ServiceRecord[]): string {
   .entry { padding-bottom: 24px; margin-bottom: 24px; }
   .border-bottom { border-bottom: 1px solid #e0d9d0; }
   .entry-title { font-size: 15px; font-weight: 600; color: #1c2620; }
-  .entry-org { font-size: 13px; font-weight: 500; color: #557A62; margin-top: 2px; }
+  .entry-org { font-size: 13px; font-weight: 500; color: #2e4d38; margin-top: 2px; }
   .entry-meta { font-size: 13px; color: #7e9488; margin-top: 8px; }
   .dot { margin: 0 8px; color: #e0d9d0; }
   .desc {
