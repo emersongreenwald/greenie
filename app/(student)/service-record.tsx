@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getStudentServiceRecord } from '../../services/hours';
+import { exportServiceRecordPDF } from '../../services/pdf';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { colors, fonts } from '../../constants/theme';
 import type { ServiceRecord } from '../../types/hours';
@@ -12,6 +13,7 @@ export default function StudentServiceRecord() {
   const { profile } = useAuthStore();
   const [records, setRecords] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -22,6 +24,18 @@ export default function StudentServiceRecord() {
     }
     load().catch(console.error);
   }, []);
+
+  async function handleExport() {
+    if (!profile) return;
+    setExporting(true);
+    try {
+      await exportServiceRecordPDF(profile, records);
+    } catch (e) {
+      Alert.alert('export failed', 'something went wrong generating your PDF.');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const totalHours = records.reduce((sum, r) => sum + Number(r.hours_logged), 0);
   const uniqueOrgs = new Set(
@@ -44,12 +58,22 @@ export default function StudentServiceRecord() {
           <Text style={{ fontFamily: fonts.extrabold }} className="text-[13px] text-brand">
             greenie
           </Text>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="close" size={18} color={colors.text.muted} />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-4">
+            <TouchableOpacity
+              onPress={handleExport}
+              disabled={exporting}
+              style={{ opacity: exporting ? 0.4 : 1 }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="share-outline" size={18} color={colors.brand.default} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close" size={18} color={colors.text.muted} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={{ fontFamily: fonts.bold }} className="text-[26px] text-charcoal leading-tight">
