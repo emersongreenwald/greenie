@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Button } from '../../components/ui/Button';
 import { fonts } from '../../constants/theme';
@@ -9,7 +9,12 @@ export default function Welcome() {
   return (
     <View className="flex-1 bg-cream">
       <View className="flex-1 items-center justify-center px-8">
-        <Text style={{ fontFamily: fonts.extrabold }} className="text-[52px] text-brand leading-none">
+        <Image
+          source={require('../../assets/frog.png')}
+          style={{ width: 140, height: 124 }}
+          resizeMode="contain"
+        />
+        <Text style={{ fontFamily: fonts.extrabold }} className="text-[52px] text-brand leading-none mt-5">
           greenie
         </Text>
         <Text style={{ fontFamily: fonts.bold }} className="text-[18px] text-charcoal mt-3 text-center">
