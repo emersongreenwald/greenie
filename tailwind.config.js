@@ -5,6 +5,8 @@ module.exports = {
     './components/**/*.{js,jsx,ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
+  // NativeWind on web throws at startup with the default 'media' mode. The app is light-only.
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {

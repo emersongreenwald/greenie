@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { IS_DEMO } from '../lib/demo';
 import { getProfile } from '../services/auth';
 import type { Profile } from '../types/auth';
 
@@ -22,6 +23,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   setProfile: (profile) => set({ profile }),
 
   initialize: async () => {
+    if (IS_DEMO) {
+      set({ initialized: true });
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
 
     let profile: Profile | null = null;

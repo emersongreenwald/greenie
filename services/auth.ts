@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { IS_DEMO } from '../lib/demo';
+import * as demo from './demo/demoDb';
 import type { AccountType, Profile } from '../types/auth';
 
 export async function signUp(
@@ -30,11 +32,13 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
+  if (IS_DEMO) return;
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
 export async function getProfile(userId: string): Promise<Profile> {
+  if (IS_DEMO) return demo.getProfile(userId);
   const { data, error } = await supabase
     .from('profiles')
     .select('*')

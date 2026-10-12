@@ -1,5 +1,6 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { Platform } from 'react-native';
 import type { ServiceRecord } from '../types/hours';
 import type { Profile } from '../types/auth';
 
@@ -196,10 +197,30 @@ export async function exportServiceRecordPDF(
   records: ServiceRecord[]
 ): Promise<void> {
   const html = buildHTML(profile, records);
+  if (Platform.OS === 'web') {
+    printInBrowser(html);
+    return;
+  }
   const { uri } = await Print.printToFileAsync({ html });
   await Sharing.shareAsync(uri, {
     mimeType: 'application/pdf',
     dialogTitle: 'Share Service Record',
     UTI: 'com.adobe.pdf',
   });
+}
+
+// expo-print's web version ignores the HTML and prints the whole screen, so print
+// the record from a hidden iframe instead. "Save as PDF" lives in the print dialog.
+function printInBrowser(html: string) {
+  const frame = document.createElement('iframe');
+  frame.style.position = 'fixed';
+  frame.style.width = '0';
+  frame.style.height = '0';
+  frame.style.border = '0';
+  frame.srcdoc = html;
+  frame.onload = () => {
+    frame.contentWindow?.addEventListener('afterprint', () => frame.remove());
+    frame.contentWindow?.print();
+  };
+  document.body.appendChild(frame);
 }

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Animated, Easing, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Animated, Easing } from 'react-native';
+import { confirmAction } from '../../lib/dialogs';
+import { USE_NATIVE_DRIVER } from '../../lib/animation';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut, getProfile } from '../../services/auth';
@@ -55,14 +57,14 @@ export default function StudentDashboard() {
             toValue: -52,
             duration: 1300,
             easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.sequence([
             Animated.delay(600),
             Animated.timing(xpFloatOpacity, {
               toValue: 0,
               duration: 700,
-              useNativeDriver: true,
+              useNativeDriver: USE_NATIVE_DRIVER,
             }),
           ]),
         ]).start();
@@ -72,27 +74,22 @@ export default function StudentDashboard() {
   }, []);
 
   function handleCancelSignup(opportunityId: string, title: string) {
-    Alert.alert(
+    confirmAction(
       'cancel sign-up',
       `remove yourself from "${title}"?`,
-      [
-        { text: 'keep it', style: 'cancel' },
-        {
-          text: 'cancel sign-up',
-          style: 'destructive',
-          onPress: async () => {
-            setCancellingId(opportunityId);
-            try {
-              await cancelSignup(opportunityId, profile!.id);
-              setOpportunities((prev) => prev.filter((o) => o.id !== opportunityId));
-            } catch (e) {
-              console.error(e);
-            } finally {
-              setCancellingId(null);
-            }
-          },
-        },
-      ]
+      'cancel sign-up',
+      async () => {
+        setCancellingId(opportunityId);
+        try {
+          await cancelSignup(opportunityId, profile!.id);
+          setOpportunities((prev) => prev.filter((o) => o.id !== opportunityId));
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setCancellingId(null);
+        }
+      },
+      'keep it'
     );
   }
 

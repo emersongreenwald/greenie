@@ -2,6 +2,9 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuthStore } from '../stores/useAuthStore';
+import { PhoneFrame } from '../components/PhoneFrame';
+import { DemoBanner } from '../components/DemoBanner';
+import { IS_DEMO } from '../lib/demo';
 import {
   useFonts,
   Manrope_400Regular,
@@ -28,5 +31,10 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <PhoneFrame>
+      {IS_DEMO && <DemoBanner />}
+      <Stack screenOptions={{ headerShown: false }} />
+    </PhoneFrame>
+  );
 }

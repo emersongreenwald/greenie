@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { View, Animated, Easing, Dimensions, StyleSheet } from 'react-native';
-
-const { width: W } = Dimensions.get('window');
+import { View, Animated, Easing, StyleSheet } from 'react-native';
+import { USE_NATIVE_DRIVER } from '../lib/animation';
 
 const COLORS = [
   '#FFB3C6', // pastel pink
@@ -21,7 +20,8 @@ function makeParticle() {
     opacity: new Animated.Value(0),
     rotate:  new Animated.Value(0),
     color:   COLORS[Math.floor(Math.random() * COLORS.length)],
-    startX:  W * 0.05 + Math.random() * W * 0.9,
+    // Percent of the container, not the window, so it fills the phone frame on desktop web
+    startX:  `${5 + Math.random() * 90}%` as const,
     w:       Math.random() * 7 + 4,
     h:       Math.random() * 9 + 5,
   };
@@ -45,21 +45,21 @@ export function Confetti() {
           Animated.timing(p.y, {
             toValue: toY, duration: dur,
             easing: Easing.bezier(0.2, 0, 0.8, 1),
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.timing(p.x, {
             toValue: toX, duration: dur,
             easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.timing(p.rotate, {
             toValue: toR, duration: dur,
-            useNativeDriver: true,
+            useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.sequence([
-            Animated.timing(p.opacity, { toValue: 1, duration: 60, useNativeDriver: true }),
+            Animated.timing(p.opacity, { toValue: 1, duration: 60, useNativeDriver: USE_NATIVE_DRIVER }),
             Animated.delay(dur * 0.5 - 60),
-            Animated.timing(p.opacity, { toValue: 0, duration: dur * 0.5, useNativeDriver: true }),
+            Animated.timing(p.opacity, { toValue: 0, duration: dur * 0.5, useNativeDriver: USE_NATIVE_DRIVER }),
           ]),
         ]),
       ]).start();

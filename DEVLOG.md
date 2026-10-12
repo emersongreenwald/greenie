@@ -4,6 +4,27 @@ Entries are in reverse chronological order. Each entry corresponds to a working 
 
 ---
 
+## 2026-10-11
+
+**What we did**
+Got Greenie running on the web for college applications: fixed browser-only bugs, added a demo mode with sample data, put the app in a phone frame on desktop, and set up a Vercel config. Work is on the `web-demo` branch.
+
+**Decisions made**
+- The public site is demo-only and built **without Supabase keys**, so it physically can't reach real student data. `lib/supabase.ts` points at a reserved `.invalid` domain when keys are missing instead of crashing on import. `IS_DEMO` is simply "no keys."
+- Demo data lives in `services/demo/`. Each real service function hands off with one `if (IS_DEMO)` line, so screens didn't change. The demo's `verifyHourLog` copies the Postgres trigger's formula (`round(hours * 10)`, 100 XP per level).
+- Sample data uses real East End places but invented orgs, people, and school so nothing implies a partnership. Dates are relative to today so events are always upcoming.
+- Web fixes: swipe threshold sized from the card (320px) instead of the window, skip/join buttons on web, `Alert.alert` replaced by `lib/dialogs.ts` (it's a no-op on web), PDF export prints from a hidden iframe on web, confetti positioned by percentage, taller tab bar on web, and `darkMode: 'class'` (NativeWind throws on web with the default).
+- The phone frame scales the whole phone down on short windows instead of squashing it, so every screen keeps a real phone's layout.
+
+**Challenges**
+- A cached Metro build made the first "keyless" test still contain the real Supabase URL. Caught by inspecting the output file. Always use `--clear` after changing env vars.
+- Chased a "lost click" bug for a while. Debug logs showed it was Chrome pausing animations in a hidden test window, not an app bug.
+
+**Next steps**
+Click through the full demo yourself in a visible browser, deploy to Vercel, then check whether opportunity dates display one day early (`new Date('YYYY-MM-DD')` parses as UTC midnight).
+
+---
+
 ## 2026-08-04
 
 **What we did**
