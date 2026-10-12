@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../../constants/theme';
@@ -14,6 +15,8 @@ export default function StudentLayout() {
           borderTopColor: colors.border,
           borderTopWidth: 1,
           paddingTop: 6,
+          // Web has no bottom safe-area inset, so the default height squeezes the labels to nothing
+          ...(Platform.OS === 'web' && { height: 68, paddingBottom: 8 }),
         },
         tabBarLabelStyle: {
           fontFamily: fonts.semibold,

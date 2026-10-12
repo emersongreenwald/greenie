@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { IS_DEMO } from '../lib/demo';
+import * as demo from './demo/demoDb';
 import type { HourLog, ServiceRecord } from '../types/hours';
 
 export async function logHours(
@@ -8,6 +10,7 @@ export async function logHours(
   actualDate: string,
   serviceDescription: string
 ): Promise<HourLog> {
+  if (IS_DEMO) return demo.logHours(opportunityId, studentId, hoursLogged, actualDate, serviceDescription);
   const { data, error } = await supabase
     .from('hour_logs')
     .insert({
@@ -24,6 +27,7 @@ export async function logHours(
 }
 
 export async function getStudentHourLogs(studentId: string): Promise<HourLog[]> {
+  if (IS_DEMO) return demo.getStudentHourLogs(studentId);
   const { data, error } = await supabase
     .from('hour_logs')
     .select('*, opportunities(title, hours_value)')
@@ -34,6 +38,7 @@ export async function getStudentHourLogs(studentId: string): Promise<HourLog[]> 
 }
 
 export async function getStudentServiceRecord(studentId: string): Promise<ServiceRecord[]> {
+  if (IS_DEMO) return demo.getStudentServiceRecord(studentId);
   const { data, error } = await supabase
     .from('hour_logs')
     .select('id, hours_logged, actual_date, service_description, verified_at, opportunities(title, location, profiles(full_name))')
@@ -45,6 +50,7 @@ export async function getStudentServiceRecord(studentId: string): Promise<Servic
 }
 
 export async function getOrgPendingLogs(_orgId: string): Promise<HourLog[]> {
+  if (IS_DEMO) return demo.getOrgPendingLogs(_orgId);
   const { data, error } = await supabase
     .from('hour_logs')
     .select('*, opportunities(title, hours_value), profiles(full_name, school_name)')
@@ -55,6 +61,7 @@ export async function getOrgPendingLogs(_orgId: string): Promise<HourLog[]> {
 }
 
 export async function verifyHourLog(logId: string): Promise<void> {
+  if (IS_DEMO) return demo.verifyHourLog(logId);
   const { error } = await supabase
     .from('hour_logs')
     .update({ status: 'verified', verified_at: new Date().toISOString() })
@@ -63,6 +70,7 @@ export async function verifyHourLog(logId: string): Promise<void> {
 }
 
 export async function rejectHourLog(logId: string): Promise<void> {
+  if (IS_DEMO) return demo.rejectHourLog(logId);
   const { error } = await supabase
     .from('hour_logs')
     .update({ status: 'rejected' })

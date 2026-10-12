@@ -1,7 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, Animated, Easing, Dimensions, StyleSheet } from 'react-native';
-
-const { width: W } = Dimensions.get('window');
+import { View, Animated, Easing, StyleSheet } from 'react-native';
 
 const COLORS = [
   '#FFB3C6', // pastel pink
@@ -21,7 +19,8 @@ function makeParticle() {
     opacity: new Animated.Value(0),
     rotate:  new Animated.Value(0),
     color:   COLORS[Math.floor(Math.random() * COLORS.length)],
-    startX:  W * 0.05 + Math.random() * W * 0.9,
+    // Percent of the container, not the window, so it fills the phone frame on desktop web
+    startX:  `${5 + Math.random() * 90}%` as const,
     w:       Math.random() * 7 + 4,
     h:       Math.random() * 9 + 5,
   };

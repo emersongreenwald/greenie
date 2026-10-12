@@ -190,7 +190,8 @@ export function SwipeCard({ children, onSwipeLeft, onSwipeRight, onTap, isFull =
       </Animated.View>
 
       {IS_WEB && (
-        <View className="flex-row gap-6 mt-6">
+        // Absolute so the buttons don't change the card's height, which discover uses to center the stack
+        <View className="absolute flex-row gap-6 mt-5" style={{ top: '100%' }}>
           <TouchableOpacity
             onPress={() => attemptSwipe('left')}
             className="w-14 h-14 rounded-full bg-white items-center justify-center border border-[#e0d9d0] cursor-pointer"

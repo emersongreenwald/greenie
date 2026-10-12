@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { IS_DEMO } from '../lib/demo';
+import * as demo from './demo/demoDb';
 import type { Opportunity, SignupEntry } from '../types/opportunity';
 
 // Fetches signup counts for any capacity-limited opportunities in the list
@@ -21,6 +23,7 @@ async function attachSignupCounts(opps: Opportunity[]): Promise<Opportunity[]> {
 }
 
 export async function getOpportunities(): Promise<Opportunity[]> {
+  if (IS_DEMO) return demo.getOpportunities();
   const { data, error } = await supabase
     .from('opportunities')
     .select('*, profiles(full_name, verified)')
@@ -31,6 +34,7 @@ export async function getOpportunities(): Promise<Opportunity[]> {
 }
 
 export async function getOpportunity(id: string): Promise<Opportunity> {
+  if (IS_DEMO) return demo.getOpportunity(id);
   const { data, error } = await supabase
     .from('opportunities')
     .select('*, profiles(full_name)')
@@ -50,6 +54,7 @@ export async function getOpportunity(id: string): Promise<Opportunity> {
 }
 
 export async function getOrgOpportunities(orgId: string): Promise<Opportunity[]> {
+  if (IS_DEMO) return demo.getOrgOpportunities(orgId);
   const { data, error } = await supabase
     .from('opportunities')
     .select('*, profiles(full_name, verified)')
@@ -70,6 +75,7 @@ export async function createOpportunity(
     capacity?: number | null;
   }
 ): Promise<void> {
+  if (IS_DEMO) return demo.createOpportunity(orgId, fields);
   const { error } = await supabase
     .from('opportunities')
     .insert({ org_id: orgId, ...fields });
@@ -87,6 +93,7 @@ export async function updateOpportunity(
     capacity?: number | null;
   }
 ): Promise<void> {
+  if (IS_DEMO) return demo.updateOpportunity(id, fields);
   const { error } = await supabase
     .from('opportunities')
     .update(fields)
@@ -95,6 +102,7 @@ export async function updateOpportunity(
 }
 
 export async function deleteOpportunity(id: string): Promise<void> {
+  if (IS_DEMO) return demo.deleteOpportunity(id);
   const { error } = await supabase
     .from('opportunities')
     .delete()
@@ -103,6 +111,7 @@ export async function deleteOpportunity(id: string): Promise<void> {
 }
 
 export async function signUpForOpportunity(opportunityId: string, studentId: string) {
+  if (IS_DEMO) return demo.signUpForOpportunity(opportunityId, studentId);
   const { error } = await supabase
     .from('opportunity_signups')
     .insert({ opportunity_id: opportunityId, student_id: studentId });
@@ -112,6 +121,7 @@ export async function signUpForOpportunity(opportunityId: string, studentId: str
 // Used by both students (cancelling their own signup) and orgs (removing a student from roster).
 // RLS policies enforce which deletes are allowed for each account type.
 export async function cancelSignup(opportunityId: string, studentId: string): Promise<void> {
+  if (IS_DEMO) return demo.cancelSignup(opportunityId, studentId);
   const { error } = await supabase
     .from('opportunity_signups')
     .delete()
@@ -121,6 +131,7 @@ export async function cancelSignup(opportunityId: string, studentId: string): Pr
 }
 
 export async function getOpportunitySignups(opportunityId: string): Promise<SignupEntry[]> {
+  if (IS_DEMO) return demo.getOpportunitySignups(opportunityId);
   const { data, error } = await supabase
     .from('opportunity_signups')
     .select('student_id, signed_up_at, profiles(full_name, school_name)')
@@ -131,6 +142,7 @@ export async function getOpportunitySignups(opportunityId: string): Promise<Sign
 }
 
 export async function getStudentSignups(studentId: string): Promise<string[]> {
+  if (IS_DEMO) return demo.getStudentSignups(studentId);
   const { data, error } = await supabase
     .from('opportunity_signups')
     .select('opportunity_id')
@@ -140,6 +152,7 @@ export async function getStudentSignups(studentId: string): Promise<string[]> {
 }
 
 export async function getSignedUpOpportunities(studentId: string): Promise<Opportunity[]> {
+  if (IS_DEMO) return demo.getSignedUpOpportunities(studentId);
   const { data, error } = await supabase
     .from('opportunity_signups')
     .select('opportunities(*, profiles(full_name))')
