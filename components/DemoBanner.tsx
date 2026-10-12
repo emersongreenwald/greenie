@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { signInAsDemo } from '../services/demo/demoDb';
+import { saveDemoSession, signInAsDemo } from '../services/demo/demoDb';
 import { useAuthStore } from '../stores/useAuthStore';
 import { fonts } from '../constants/theme';
 
@@ -10,6 +10,7 @@ export function DemoBanner() {
   const otherRole = profile?.account_type === 'student' ? 'org' : 'student';
 
   function switchView() {
+    if (profile) saveDemoSession(profile);
     setProfile(signInAsDemo(otherRole));
     router.replace(otherRole === 'student' ? '/(student)/dashboard' : '/(org)/dashboard');
   }

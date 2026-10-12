@@ -2,6 +2,7 @@ import { useRef, ReactNode } from 'react';
 import { Animated, PanResponder, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts } from '../constants/theme';
+import { USE_NATIVE_DRIVER } from '../lib/animation';
 
 // Sized from the card, not the window: on a desktop browser the window is ~1440px wide,
 // which made the threshold impossible to reach inside the phone frame.
@@ -9,8 +10,6 @@ const CARD_WIDTH = 320; // OpportunityCard's w-80
 const SWIPE_THRESHOLD = CARD_WIDTH * 0.3;
 const SWIPE_OUT_DISTANCE = CARD_WIDTH * 2;
 const SWIPE_OUT_DURATION = 250;
-// Browsers have no native animation thread, so react-native-web warns on every animation.
-const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 const IS_WEB = Platform.OS === 'web';
 
 interface SwipeCardProps {

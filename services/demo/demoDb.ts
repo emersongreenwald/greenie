@@ -34,8 +34,17 @@ function byDate(a: Opportunity, b: Opportunity) {
 
 // ── auth ────────────────────────────────────────────────────────────────
 
+// Each role's profile as it was when the visitor last switched away. Restoring it (instead of a
+// fresh copy) lets the dashboard see the old XP and play the "+xp" animation, as it does after login.
+const savedSessions: Record<string, Profile> = {};
+
+export function saveDemoSession(profile: Profile) {
+  savedSessions[profile.id] = { ...profile };
+}
+
 export function signInAsDemo(role: 'student' | 'org'): Profile {
-  return { ...findProfile(role === 'student' ? DEMO_STUDENT_ID : DEMO_ORG_ID)! };
+  const id = role === 'student' ? DEMO_STUDENT_ID : DEMO_ORG_ID;
+  return { ...(savedSessions[id] ?? findProfile(id)!) };
 }
 
 export async function getProfile(userId: string): Promise<Profile> {
