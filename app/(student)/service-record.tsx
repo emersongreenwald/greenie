@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { showMessage } from '../../lib/dialogs';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getStudentServiceRecord } from '../../services/hours';
@@ -31,7 +32,7 @@ export default function StudentServiceRecord() {
     try {
       await exportServiceRecordPDF(profile, records);
     } catch (e) {
-      Alert.alert('export failed', 'something went wrong generating your PDF.');
+      showMessage('export failed', 'something went wrong generating your PDF.');
     } finally {
       setExporting(false);
     }

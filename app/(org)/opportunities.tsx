@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { confirmAction } from '../../lib/dialogs';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getOrgOpportunities, deleteOpportunity } from '../../services/opportunities';
@@ -28,27 +29,21 @@ export default function OrgOpportunities() {
   }
 
   function handleDelete(id: string) {
-    Alert.alert(
+    confirmAction(
       'delete opportunity',
       'students who signed up will no longer see this. are you sure?',
-      [
-        { text: 'cancel', style: 'cancel' },
-        {
-          text: 'delete',
-          style: 'destructive',
-          onPress: async () => {
-            setDeletingId(id);
-            try {
-              await deleteOpportunity(id);
-              setOpportunities((prev) => prev.filter((o) => o.id !== id));
-            } catch (e) {
-              console.error(e);
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ]
+      'delete',
+      async () => {
+        setDeletingId(id);
+        try {
+          await deleteOpportunity(id);
+          setOpportunities((prev) => prev.filter((o) => o.id !== id));
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setDeletingId(null);
+        }
+      }
     );
   }
 

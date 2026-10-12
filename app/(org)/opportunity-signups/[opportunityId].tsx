@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { confirmAction } from '../../../lib/dialogs';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getOpportunitySignups, cancelSignup } from '../../../services/opportunities';
@@ -27,27 +28,21 @@ export default function OpportunitySignups() {
   }, []);
 
   function handleRemove(studentId: string, studentName: string) {
-    Alert.alert(
+    confirmAction(
       'remove student',
       `remove ${studentName} from the roster for "${title}"?`,
-      [
-        { text: 'cancel', style: 'cancel' },
-        {
-          text: 'remove',
-          style: 'destructive',
-          onPress: async () => {
-            setRemovingId(studentId);
-            try {
-              await cancelSignup(opportunityId, studentId);
-              setSignups((prev) => prev.filter((s) => s.student_id !== studentId));
-            } catch (e) {
-              console.error(e);
-            } finally {
-              setRemovingId(null);
-            }
-          },
-        },
-      ]
+      'remove',
+      async () => {
+        setRemovingId(studentId);
+        try {
+          await cancelSignup(opportunityId, studentId);
+          setSignups((prev) => prev.filter((s) => s.student_id !== studentId));
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setRemovingId(null);
+        }
+      }
     );
   }
 
